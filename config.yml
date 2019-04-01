@@ -1,0 +1,22 @@
+models:
+  music2vec:
+    window_size: 5
+    negative_sample: 20
+    down_sample: 1e-3
+    learning_rate: 0.025
+    epochs: 5
+    vector_dim: 300
+session:
+  interval: 30
+algorithms:
+  m2vTN: True
+  sm2vTN: True
+  csm2vTN: True
+  csm2vUK: True
+evaluation:
+  dataset: 'xiami'
+  cross-validation: 5
+  topN: 10
+  metrics: ['precision', 'recall', 'hitrate', 'f1']
+logfile: 'exec.log'
+num_parallel: 5
