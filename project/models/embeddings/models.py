@@ -1,4 +1,5 @@
 import os
+import sys
 import logging
 import pandas               as pd
 import numpy                as np
@@ -28,6 +29,7 @@ def data_prep(model, data, is_doc=False):
     if model == 'session':
         last_s = data.iloc[0,3]
         sentences = []
+        i = 0
         for row in data.itertuples():
             a_s = getattr(row, 'session')
             if a_s != last_s:
@@ -38,21 +40,23 @@ def data_prep(model, data, is_doc=False):
                 sentences = []
             sentences.append(getattr(row, 'song'))
             last_s = a_s
+            print('Prepping the dataset for the sessionmusic2vec model [{}%]'.format(round(percentage(i, len(data.index)),2)), end='\r', flush=True)
+            i+=1
     return sequences
             
 def music2vec(data, p):
     sequence = data_prep('user', data, False)
-    return Word2Vec(sequence, vector_size=p['vector_dim'],
-                    alpha=p['learning_rate'], window=p['window_size'],
-                    sample=p['down_sample'], sg=1, hs=0, negative=p['negative_sample'],
-                    epochs=p['epochs'], min_count=1, compute_loss=True)
+    return Word2Vec(sequence, size=int(p['vector_dim']),
+                    alpha=float(p['learning_rate']), window=int(p['window_size']),
+                    sample=float(p['down_sample']), sg=1, hs=0, negative=int(p['negative_sample']),
+                    iter=int(p['epochs']), min_count=1, compute_loss=True)
 
 def session_music2vec(data, p):
     sequence = data_prep('session', data, False)
-    return Word2Vec(sequence, vector_size=p['vector_dim'],
-                    alpha=p['learning_rate'], window=p['window_size'],
-                    sample=p['down_sample'], sg=1, hs=0, negative=p['negative_sample'],
-                    epochs=p['epochs'], min_count=1, compute_loss=True)
+    return Word2Vec(sequence, size=p['vector_dim'],
+                    alpha=float(p['learning_rate']), window=int(p['window_size']),
+                    sample=float(p['down_sample']), sg=1, hs=0, negative=int(p['negative_sample']),
+                    iter=int(p['epochs']), min_count=1, compute_loss=True)
 # def doc2vec(data):
 #     sequence = data_prep('user', data, True)
 #     return Doc2Vec(sequence, dm=1, vector_size=vector_dim,
@@ -68,22 +72,23 @@ def session_music2vec(data, p):
 #                     epochs=epochs, min_count=1, compute_loss=True)
 
 def model_runner(dataset, params):
-    printlog('Checking if the models are in tmp folder')
+    printlog('Checking if the models are in tmp/models folder')
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     should_run_m2v = True
     should_run_sm2v = True
-    for file in os.listdir('tmp'):
+    for file in os.listdir('tmp/models'):
         if 'music2vec.model' == file:
-            printlog('There\'s already a music2vec model in the tmp folder.')
+            printlog('There\'s already a music2vec model in the tmp/models folder.')
             should_run_m2v = False
         if 'sessionmusic2vec.model' == file:
-            printlog('There\'s already a sessionmusic2vec model in the tmp folder.')
+            printlog('There\'s already a sessionmusic2vec model in the tmp/models folder.')
             should_run_sm2v = False
     if should_run_m2v == False and should_run_sm2v == False:
         printlog('No models to run, exiting the models phase.')
         return
     df = pd.read_csv('dataset/{}/session_listening_history.csv'.format(dataset), sep = ',')
     if should_run_m2v:
-        music2vec(df, params).save('tmp/music2vec.model')
+        music2vec(df, params).save('tmp/models/music2vec.model')
     if should_run_sm2v:
-        session_music2vec(df, params).save('tmp/sessionmusic2vec.model')
+        session_music2vec(df, params).save('tmp/models/sessionmusic2vec.model')
 
