@@ -1,7 +1,6 @@
 import yaml
 import multiprocessing                      as mp
 import project.data.preprocess              as pp
-import project.data.crossvalidation         as cv
 import project.models.embeddings.models     as emb
 import project.evaluation.run               as r
 from datetime import datetime
@@ -22,7 +21,5 @@ if __name__ == '__main__':
 
     emb.model_runner(conf['evaluation']['dataset'], conf['models']['music2vec'])
 
-    cv.cross_validation(conf['evaluation']['dataset'], conf['evaluation']['cross-validation'])
-    
     r.execute_cv(conf['evaluation'])
 

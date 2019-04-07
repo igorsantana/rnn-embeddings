@@ -10,7 +10,8 @@ import project.evaluation.metrics           as m
 from scipy.spatial.distance     import cdist
 from datetime                   import datetime
 from operator                   import add, truediv
-from functools                  import reduce
+from sklearn.metrics.pairwise   import cosine_similarity as cosine
+from numpy.linalg import norm
 # import SessionMusic2VecTopN             as sm2vtn
 # import ContextSessionMusic2VecTopN      as csm2vtn
 # import ContextSessionMusic2VecUserKNN   as csm2vuk
@@ -26,10 +27,10 @@ f_measure   = lambda prec, rec: 0.0 if (prec + rec) == 0 else round((2 * prec * 
 
 
 
-def run_m2vTN(song_emb, ses_song, user_sess, topN):
+def run_m2vTN(song_emb, ses_song, user_sess, topN, i):
     printlog('Started to evaluate users for the m2vTN algorithm')
-    users   = user_sess[user_sess['tt'] == 'test'].index.values
-    emb     = lambda x : song_emb.loc[x]['embedding']
+    users   = user_sess[user_sess['tt_{}'.format(i)] == 'test'].index.values
+    emb     = lambda x : song_emb.loc[x]['music2vec']
     m_values = []
     for user in users:
         sessions        = user_sess.loc[user,'sessions']    
@@ -37,8 +38,11 @@ def run_m2vTN(song_emb, ses_song, user_sess, topN):
         a_songs         = np.array(songs['songs'].sum())
         train_songs     = a_songs[:len(a_songs)//2]
         test_songs      = a_songs[len(a_songs)//2:]
-        pref            = np.mean(emb(train_songs))[None]
-        song_emb['cos'] = cdist(np.stack(song_emb['embedding']), pref, metric='cosine') 
+        pref            = np.mean(emb(train_songs), axis=0)
+        song_emb['cos'] = song_emb['music2vec']
+        # Fix this cosine, mem error
+        # song_emb['cos'].apply(lambda x : cosine(x.reshape(-1, 1), pref.reshape(-1, 1)))
+        print(song_emb['cos'])
         topn            = np.array(song_emb.nlargest(topN, 'cos').index)
 
         hit = hitrate(topn, test_songs)
@@ -66,9 +70,9 @@ def run_sm2vTN(train, test, topN, sm2v):
     printlog('Finished to evaluate users for the sm2vTN algorithm')
     return pd.DataFrame(m_values, columns=['Precision', 'Recall', 'HitRate', 'F-measure'])
             
-def execute_algo(s_embeddings, s_songs, u_sessions, name, topN):
+def execute_algo(s_embeddings, s_songs, u_sessions, name, topN, i):
     if name == 'm2vTN':
-        return run_m2vTN(s_embeddings, s_songs, u_sessions, topN)
-    if name == 'sm2vTN':
-        return run_sm2vTN(s_embeddings, s_songs, u_sessions, topN)
+        return run_m2vTN(s_embeddings, s_songs, u_sessions, topN, i)
+    # if name == 'sm2vTN':
+    #     return run_sm2vTN(s_embeddings, s_songs, u_sessions, topN, i)
     return 1
