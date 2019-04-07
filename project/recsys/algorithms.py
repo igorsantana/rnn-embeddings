@@ -7,10 +7,10 @@ import pandas                               as pd
 import project.recsys.Music2VecTopN         as m2vtn
 import project.recsys.SessionMusic2VecTopN  as sm2vtn
 import project.evaluation.metrics           as m
-from scipy.spatial.distance     import cdist
+from scipy.spatial.distance     import cosine
 from datetime                   import datetime
 from operator                   import add, truediv
-from sklearn.metrics.pairwise   import cosine_similarity as cosine
+
 from numpy.linalg import norm
 # import SessionMusic2VecTopN             as sm2vtn
 # import ContextSessionMusic2VecTopN      as csm2vtn
@@ -30,7 +30,8 @@ f_measure   = lambda prec, rec: 0.0 if (prec + rec) == 0 else round((2 * prec * 
 def run_m2vTN(song_emb, ses_song, user_sess, topN, i):
     printlog('Started to evaluate users for the m2vTN algorithm')
     users   = user_sess[user_sess['tt_{}'.format(i)] == 'test'].index.values
-    emb     = lambda x : song_emb.loc[x]['music2vec']
+    emb     = lambda x : song_emb.loc[x]['music2vec'].tolist()
+    tolist  = lambda x: list(x)
     m_values = []
     for user in users:
         sessions        = user_sess.loc[user,'sessions']    
@@ -39,10 +40,7 @@ def run_m2vTN(song_emb, ses_song, user_sess, topN, i):
         train_songs     = a_songs[:len(a_songs)//2]
         test_songs      = a_songs[len(a_songs)//2:]
         pref            = np.mean(emb(train_songs), axis=0)
-        song_emb['cos'] = song_emb['music2vec']
-        # Fix this cosine, mem error
-        # song_emb['cos'].apply(lambda x : cosine(x.reshape(-1, 1), pref.reshape(-1, 1)))
-        print(song_emb['cos'])
+        song_emb['cos'] = song_emb['music2vec'].apply(lambda x: 1 - cosine(x, pref))
         topn            = np.array(song_emb.nlargest(topN, 'cos').index)
 
         hit = hitrate(topn, test_songs)
@@ -50,7 +48,6 @@ def run_m2vTN(song_emb, ses_song, user_sess, topN, i):
         r   = rec(topn, test_songs)
         fm  = f_measure(p, r)
 
-        print([hit, p, r, fm])
         m_values.append([hit, p, r, fm])
     printlog('Finished to evaluate users for the m2vTN algorithm')
     return pd.DataFrame(m_values, columns=['Precision', 'Recall', 'HitRate', 'F-measure'])
