@@ -31,7 +31,6 @@ def run_m2vTN(song_emb, ses_song, user_sess, topN, i):
     printlog('Started to evaluate users for the m2vTN algorithm')
     users   = user_sess[user_sess['tt_{}'.format(i)] == 'test'].index.values
     emb     = lambda x : song_emb.loc[x]['music2vec'].tolist()
-    tolist  = lambda x: list(x)
     m_values = []
     for user in users:
         sessions        = user_sess.loc[user,'sessions']    
