@@ -11,8 +11,7 @@ def __load_models():
     return Word2Vec.load('tmp/models/music2vec.model'), Word2Vec.load('tmp/models/sessionmusic2vec.model')
 
 def __execute_fold(s_emb, s_songs, u_sess, i, tN):
-    m_m2vTN     = runner.execute_algo(s_emb, s_songs, u_sess, 'm2vTN', tN, i)
-    print(m_m2vTN)
+    # m_m2vTN     = runner.execute_algo(s_emb, s_songs, u_sess, 'm2vTN', tN, i)
     m_sm2vTN    = runner.execute_algo(s_emb, s_songs, u_sess, 'sm2vTN', tN, i)
     # m_csm2vTN   = runner.execute_algo(data['train'], data['test'], 'csm2vTN', tN, 'xiami', m2v, sm2v)
     # m_csm2vUK   = runner.execute_algo(data['train'], data['test'], 'csm2vUK', tN, 'xiami', m2v, sm2v)
