@@ -10,14 +10,15 @@ from gensim.models                      import Word2Vec
 def __load_models():
     return Word2Vec.load('tmp/models/music2vec.model'), Word2Vec.load('tmp/models/sessionmusic2vec.model')
 
-def __execute_fold(s_emb, s_songs, u_sess, i, tN):
-    m_m2vTN     = runner.execute_algo(s_emb, s_songs, u_sess, 'm2vTN', tN, i)
-    m_sm2vTN    = runner.execute_algo(s_emb, s_songs, u_sess, 'sm2vTN', tN, i)
-    print(m_m2vTN)
-    print(m_sm2vTN)
-    
-    # m_csm2vTN   = runner.execute_algo(data['train'], data['test'], 'csm2vTN', tN, 'xiami', m2v, sm2v)
-    # m_csm2vUK   = runner.execute_algo(data['train'], data['test'], 'csm2vUK', tN, 'xiami', m2v, sm2v)
+def __execute_fold(s_emb, s_songs, u_sess, i, tN, k):
+    # m_m2vTN     = runner.execute_algo(s_emb, s_songs, u_sess, 'm2vTN', tN, i)
+    # m_sm2vTN    = runner.execute_algo(s_emb, s_songs, u_sess, 'sm2vTN', tN, i)
+    # print(m_m2vTN)
+    # print(m_sm2vTN)
+    # print(m_csm2vTN)
+    # m_csm2vTN   = runner.execute_algo(s_emb, s_songs, u_sess, 'csm2vTN', tN, i)
+    m_csm2vUK   = runner.execute_algo(s_emb, s_songs, u_sess, 'csm2vUK', tN, i, k)
+    print(m_csm2vUK)
     # queue.put(('{}_m2vTN'.format(i), m_m2vTN))
     # # queue.put(('{}_sm2vTN'.format(i), m_sm2vTN))
     # queue.task_done()
@@ -37,7 +38,7 @@ def execute_cv(conf):
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     # q           = JoinableQueue()
     # proc        = [Process(target=__execute_fold, args=(s_emb, s_songs, u_sess, i, topN, q)) for i in range(cv)]
-    __execute_fold(s_emb, s_songs, u_sess, 0, topN)
+    __execute_fold(s_emb, s_songs, u_sess, 0, topN, 5)
 
 
     # for p in proc: p.start()
