@@ -33,51 +33,37 @@ def run_m2vTN(song_emb, ses_song, user_sess, topN, i):
     printlog('Started to evaluate users for the m2vTN algorithm')
     users   = user_sess[user_sess['tt_{}'.format(i)] == 'test'].index.values
     def map_user(user):
-        songs           = ses_song.loc[pd.unique(user_sess.loc[user,'sessions']),:]
-        a_songs         = np.array(songs['songs'].sum())
-        train_songs     = a_songs[:len(a_songs)//2]
-        test_songs      = a_songs[len(a_songs)//2:]
-        pref            = np.mean(song_emb.loc[train_songs, 'music2vec'].values, axis=0)
-        dist            = cdist(np.array(song_emb['music2vec'].tolist()), np.array([pref]), metric='cosine')
-        song_emb['cos'] = [ 1 - x[0] for x in dist]
+        songs           = ses_song.loc[pd.unique(user_sess.loc[user,'sessions']),'songs'].values
+        train           = [sess[:len(sess)//2] for sess in songs]
+        test            = [sess[len(sess)//2:] for sess in songs]
+        pref            = np.mean(song_emb.loc[sum(train, []), 'music2vec'], axis=0)
+        song_emb['cos'] = [1 - x[0] for x in cdist(np.array(song_emb['music2vec'].tolist()), np.array([pref]), metric='cosine')]
         topn            = song_emb.nlargest(topN, 'cos').index.values
+        test_songs      = sum(test, [])
         p   = prec(topn, test_songs)
         r   = rec(topn, test_songs)
         return {'HitRate': hitrate(topn, test_songs), 'Precision': p, 'Recall': r, 'F-measure': f_measure(p, r)}
-    metrics = np.vectorize(map_user)(users[:3])
+    metrics = np.vectorize(map_user)(users)
     printlog('Finished to evaluate users for the m2vTN algorithm')
     return pd.DataFrame(metrics)
 
 def run_sm2vTN(song_emb, ses_song, user_sess, topN, i):
     printlog('Started to evaluate users for the sm2vTN algorithm')
     users   = user_sess[user_sess['tt_{}'.format(i)] == 'test'].index.values
-    def map_user(user):
-        sessions    = pd.unique(user_sess.loc[user,'sessions'])
-        songs       = [(session, ses_song.loc[session,'songs']) for session in sessions]
-        _sum = 0
-        i = 0
-        tt_labels   = []
-        for sl in songs:
-            tt_labels.append('test' if (_sum + len(sl[1]) >= 500) else 'train')
-            _sum += len(sl[1])
-            i+= 1
-        test_sessions   = np.array([val[0] for i, val in enumerate(songs) if tt_labels[i] == 'test'])
-        test_songs      = itertools.chain.from_iterable([ses_song.loc[session,'songs'] for session in sessions])
-        test_songs      = np.array(list(test_songs))
-        metricx = []
-        for x in test_sessions:
-            pref                            = song_emb.loc[ses_song.loc[x, 'songs'], 'sessionmusic2vec'].agg('mean', axis=0)
-            song_emb['cos_{}'.format(x)]    = 0
-            dist                            = cdist(np.array(song_emb['sessionmusic2vec'].tolist()), np.array([pref]), metric='cosine')
-            song_emb['cos_{}'.format(x)]    = [ 1 - x[0] for x in dist]
-            topn                            = song_emb.nlargest(topN, 'cos_{}'.format(x)).index.values
-            p   = prec(topn, test_songs)
-            r   = rec(topn, test_songs)
-            metricx.append([hitrate(topn, test_songs), p, r, f_measure(p, r)])
-        mean = np.mean(metricx, axis=0)
-        return {'HitRate': mean[0], 'Precision': mean[1], 'Recall': mean[2], 'F-measure': mean[3]}
 
-    metrics = np.vectorize(map_user)(users[:3])
+    def map_user(user):
+        songs           = ses_song.loc[pd.unique(user_sess.loc[user,'sessions']),'songs'].values
+        test            = [sess[len(sess)//2:] for sess in songs]
+        v               = song_emb.loc[test[0], 'sessionmusic2vec']
+        pref            = np.mean(v)
+        song_emb['cos'] = [1 - x[0] for x in cdist(np.array(song_emb['sessionmusic2vec'].tolist()), np.array([pref]), metric='cosine')]
+        topn            = song_emb.nlargest(topN, 'cos').index.values
+        test_songs      = sum(test, [])
+        p   = prec(topn, test_songs)
+        r   = rec(topn, test_songs)
+        return {'HitRate': hitrate(topn, test_songs), 'Precision': p, 'Recall': r, 'F-measure': f_measure(p, r)}
+
+    metrics = np.vectorize(map_user)(users)
     printlog('Finished to evaluate users for the sm2vTN algorithm')
     return pd.DataFrame(metrics)
             
