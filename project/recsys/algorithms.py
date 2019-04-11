@@ -92,23 +92,27 @@ def run_csm2vUK(song_emb, ses_song, user_sess, topN, i, k):
     users   = user_sess[user_sess['tt_{}'.format(i)] == 'test'].index.values
 
     def u_sim(u, v):
-        d = math.sqrt(int(u[-1]) * int(v[-1])  ) + (1 - cosine(u[:len(u)-1], v[:len(v)-1]))
+        d = math.sqrt(int(u[-1] - 10000) * int(v[-1]) - 10000) + (1 - cosine(u[:len(u)-1], v[:len(v)-1]))
         return 0 if not d else (1 / d)
 
-    def user_pref(u):
+    def user_pref_fn(u):
         u_songs     = ses_song.loc[pd.unique(user_sess.loc[u,'sessions']),'songs'].values.tolist()
         return np.mean(song_emb.loc[sum([sess[:len(sess)//2] for sess in u_songs], []), 'music2vec'])
 
-    user_pref   = pd.DataFrame([np.append(user_pref(user), [10000 + len(ses_song.loc[pd.unique(user_sess.loc[user,'sessions']),'songs'].values.tolist())]) for user in user_sess.index.values], index=user_sess.index, columns=range(0, 301))
+    user_pref   = pd.DataFrame([np.append(user_pref_fn(user), [10000 + len(ses_song.loc[pd.unique(user_sess.loc[user,'sessions']),'songs'].values.tolist())]) for user in user_sess.index.values], index=user_sess.index, columns=range(0, 301))
     sim_matrix  = pd.DataFrame(squareform(pdist(user_pref, u_sim)), index=user_sess.index, columns=user_sess.index)
 
     def map_user(user):
-        songs       = ses_song.loc[pd.unique(user_sess.loc[user,'sessions']),'songs'].values
-        k_sim       = sim_matrix.nlargest(k, user).index.values
-        s_k_sim     = [sum(ses_song.loc[pd.unique(user_sess.loc[user,'sessions']),'songs'].values, []) for user in k_sim]
-        test        = [sess[len(sess)//2:] for sess in songs]
-        ctx_pref    = np.mean(song_emb.loc[test[0], 'sessionmusic2vec'])
+        pref            = user_pref_fn(user)
+        songs           = ses_song.loc[pd.unique(user_sess.loc[user,'sessions']),'songs'].values
+        k_sim           = sim_matrix.nlargest(k, user).index.values
+        s_k_sim         = [sum(ses_song.loc[pd.unique(user_sess.loc[user,'sessions']),'songs'].values, []) for user in k_sim]
 
+        # def add_sim(r):
+        #     for v in k_sim:
+        #         sim = sim_matrix.loc[user, v]
+
+        song_emb['cos'] = [1 - x[0] for x in cdist(np.array(song_emb['sessionmusic2vec'].tolist()), np.array([pref]), metric='cosine')]
         return 1
     #     train           = [sess[:len(sess)//2] for sess in songs]
     #     pref            = np.mean(song_emb.loc[sum(train, []), 'music2vec'])
