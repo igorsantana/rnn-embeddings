@@ -16,16 +16,15 @@ def __execute_fold(s_emb, s_songs, u_sess, i, tN, k, queue):
     m_sm2vTN    = runner.execute_algo(s_emb, s_songs, u_sess, 'sm2vTN', tN, i, k)
     queue.put(('{}_sm2vTN'.format(i), m_sm2vTN))
     m_csm2vTN   = runner.execute_algo(s_emb, s_songs, u_sess, 'csm2vTN', tN, i, k)
-    queue.put(('{}_csm2vTN'.format(i), m_sm2vTN))
+    queue.put(('{}_csm2vTN'.format(i), m_csm2vTN))
     m_csm2vUK   = runner.execute_algo(s_emb, s_songs, u_sess, 'csm2vUK', tN, i, k)
     queue.put(('{}_csm2vUK'.format(i), m_csm2vUK))
     
 
-
 def execute_cv(conf):    
     topN                    = int(conf['topN'])
     m2v, sm2v               = __load_models()
-    df                      = pd.read_csv('dataset/{}/session_listening_history_reduzido.csv'.format(conf['dataset']))
+    df                      = pd.read_csv('dataset/{}/session_listening_history.csv'.format(conf['dataset']))
     cv                      = int(conf['cross-validation'])
     s_emb, s_songs, u_sess  = prep.split(df, cv, m2v, sm2v)
     prec                    = pd.DataFrame([], index=[0,1,2,3,4], columns=['m2vTN', 'sm2vTN', 'csm2vTN', 'csm2vUK'])
@@ -56,7 +55,7 @@ def execute_cv(conf):
     rec.loc['mean'] = rec.mean()
     fmeas.loc['mean'] = fmeas.mean()
     hitrate.loc['mean'] = hitrate.mean()
-    
+
     with open("output.txt", "w") as f:
         print('Precision: ', file=f)
         print(prec.to_string(col_space=10), end='\n\n', file=f)
