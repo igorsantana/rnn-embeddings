@@ -46,7 +46,7 @@ def run_m2vTN(song_emb, ses_song, user_sess, topN, i):
         return {'HitRate': hitrate(topn, test_songs), 'Precision': p, 'Recall': r, 'F-measure': f_measure(p, r)}
     metrics = np.vectorize(map_user)(users)
     printlog('Finished to evaluate users for the m2vTN algorithm')
-    return pd.DataFrame(metrics)
+    return pd.DataFrame(list(metrics))
 
 def run_sm2vTN(song_emb, ses_song, user_sess, topN, i):
     printlog('Started to evaluate users for the sm2vTN algorithm')
@@ -63,7 +63,7 @@ def run_sm2vTN(song_emb, ses_song, user_sess, topN, i):
         return {'HitRate': hitrate(topn, test_songs), 'Precision': p, 'Recall': r, 'F-measure': f_measure(p, r)}
     metrics = np.vectorize(map_user)(users)
     printlog('Finished to evaluate users for the sm2vTN algorithm')
-    return pd.DataFrame(metrics)
+    return pd.DataFrame(list(metrics))
 
 def run_csm2vTN(song_emb, ses_song, user_sess, topN, i):
     printlog('Started to evaluate users for the csm2vTN algorithm')
@@ -85,7 +85,7 @@ def run_csm2vTN(song_emb, ses_song, user_sess, topN, i):
         return {'HitRate': hitrate(topn, test_songs), 'Precision': p, 'Recall': r, 'F-measure': f_measure(p, r)}
     metrics = np.vectorize(map_user)(users)
     printlog('Finished to evaluate users for the csm2vTN algorithm')
-    return pd.DataFrame(metrics)
+    return pd.DataFrame(list(metrics))
 
 def run_csm2vUK(song_emb, ses_song, user_sess, topN, i, k):
     printlog('Started to evaluate users for the csm2vUK algorithm')
@@ -97,7 +97,7 @@ def run_csm2vUK(song_emb, ses_song, user_sess, topN, i, k):
 
     def user_pref_fn(u):
         u_songs     = ses_song.loc[pd.unique(user_sess.loc[u,'sessions']),'songs'].values.tolist()
-        return np.mean(song_emb.loc[sum([sess[:len(sess)//2] for sess in u_songs], []), 'music2vec'])
+        return np.mean(song_emb.loc[sum([sess[:len(sess)//2] for sess in u_songs], []), 'sessionmusic2vec'])
 
     user_pref   = pd.DataFrame([np.append(user_pref_fn(user), [10000 + len(ses_song.loc[pd.unique(user_sess.loc[user,'sessions']),'songs'].values.tolist())]) for user in user_sess.index.values], index=user_sess.index, columns=range(0, 301))
     sim_matrix  = pd.DataFrame(squareform(pdist(user_pref, u_sim)), index=user_sess.index, columns=user_sess.index)
@@ -105,28 +105,28 @@ def run_csm2vUK(song_emb, ses_song, user_sess, topN, i, k):
     def map_user(user):
         pref            = user_pref_fn(user)
         songs           = ses_song.loc[pd.unique(user_sess.loc[user,'sessions']),'songs'].values
+        test            = [sess[len(sess)//2:] for sess in songs]
         k_sim           = sim_matrix.nlargest(k, user).index.values
         s_k_sim         = [sum(ses_song.loc[pd.unique(user_sess.loc[user,'sessions']),'songs'].values, []) for user in k_sim]
-
-        # def add_sim(r):
-        #     for v in k_sim:
-        #         sim = sim_matrix.loc[user, v]
-
-        song_emb['cos'] = [1 - x[0] for x in cdist(np.array(song_emb['sessionmusic2vec'].tolist()), np.array([pref]), metric='cosine')]
-        return 1
-    #     train           = [sess[:len(sess)//2] for sess in songs]
-    #     pref            = np.mean(song_emb.loc[sum(train, []), 'music2vec'])
-    #     cos_pref        = [1 - x[0] for x in cdist(np.array(song_emb['music2vec'].tolist()), np.array([pref]), metric='cosine')]
-    #     song_emb['cos'] = cos_pref
-    #     song_emb['cos'] += cos_ctxpref
-    #     topn            = song_emb.nlargest(topN, 'cos').index.values
-    #     test_songs      = sum(test, [])
-    #     p   = prec(topn, test_songs)
-    #     r   = rec(topn, test_songs)
-    #     return {'HitRate': hitrate(topn, test_songs), 'Precision': p, 'Recall': r, 'F-measure': f_measure(p, r)}
+        users_listened  = lambda m: [k_sim[i] for i, song_arr in enumerate(s_k_sim) if m in song_arr]
+        
+        song_emb['cos']     = [1 - x[0] for x in cdist(np.array(song_emb['sessionmusic2vec'].tolist()), np.array([pref]), metric='cosine')]
+        song_emb['u_sim']   = [[sim_matrix.loc[user, y] for y in users_listened(x)] for x in song_emb.index.values]
+        pref_values = []
+        for song in song_emb.index.values:
+            u_sims      = song_emb.loc[song, 'u_sim']
+            cos         = song_emb.loc[song, 'cos']
+            len_sim     = len(u_sims)
+            pref_values.append(sum([sim / (float(len_sim) + cos) for sim in u_sims]))
+        song_emb['pref']    = pref_values
+        topn                = song_emb.nlargest(topN, 'pref').index.values
+        test_songs      = sum(test, [])
+        p   = prec(topn, test_songs)
+        r   = rec(topn, test_songs)
+        return {'HitRate': hitrate(topn, test_songs), 'Precision': p, 'Recall': r, 'F-measure': f_measure(p, r)}
     metrics = np.vectorize(map_user)(users)
     printlog('Finished to evaluate users for the csm2vUK algorithm')
-    # return pd.DataFrame(metrics)
+    return pd.DataFrame(list(metrics))
 
 
 def execute_algo(s_embeddings, s_songs, u_sessions, name, topN, i, k):
@@ -138,5 +138,6 @@ def execute_algo(s_embeddings, s_songs, u_sessions, name, topN, i, k):
         return run_csm2vTN(s_embeddings, s_songs, u_sessions, topN, i)
     if name == 'csm2vUK':        
         return run_csm2vUK(s_embeddings, s_songs, u_sessions, topN, i, k)
-    return 1
+    return 0
+    
     
