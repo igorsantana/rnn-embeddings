@@ -24,7 +24,7 @@ def __execute_fold(s_emb, s_songs, u_sess, i, tN, k, queue):
 def execute_cv(conf):    
     topN                    = int(conf['topN'])
     m2v, sm2v               = __load_models()
-    df                      = pd.read_csv('dataset/{}/session_listening_history.csv'.format(conf['dataset']))
+    df                      = pd.read_csv('dataset/{}/session_listening_history_reduzido.csv'.format(conf['dataset']))
     cv                      = int(conf['cross-validation'])
     s_emb, s_songs, u_sess  = prep.split(df, cv, m2v, sm2v)
     prec                    = pd.DataFrame([], index=[0,1,2,3,4], columns=['m2vTN', 'sm2vTN', 'csm2vTN', 'csm2vUK'])
@@ -49,12 +49,12 @@ def execute_cv(conf):
         prec.loc[int(fold_algo[0]), fold_algo[1]]       = df['Precision'].mean()
         rec.loc[int(fold_algo[0]), fold_algo[1]]        = df['Recall'].mean()
         fmeas.loc[int(fold_algo[0]), fold_algo[1]]      = df['F-measure'].mean()
-        hitrate.loc[int(fold_algo[0]), fold_algo[1]]    = df['HitRate'].mean()
+        # hitrate.loc[int(fold_algo[0]), fold_algo[1]]    = df['HitRate'].mean()
         
     prec.loc['mean'] = prec.mean()
     rec.loc['mean'] = rec.mean()
     fmeas.loc['mean'] = fmeas.mean()
-    hitrate.loc['mean'] = hitrate.mean()
+    # hitrate.loc['mean'] = hitrate.mean()
 
     with open("output.txt", "w") as f:
         print('Precision: ', file=f)
@@ -63,6 +63,6 @@ def execute_cv(conf):
         print(rec.to_string(col_space=10), end='\n\n', file=f)
         print('F-measure: ', file=f)
         print(fmeas.to_string(col_space=10), end='\n\n', file=f)
-        print('HitRate: ', file=f)
-        print(hitrate.to_string(col_space=10), file=f)
+        # print('HitRate: ', file=f)
+        # print(hitrate.to_string(col_space=10), file=f)
 
