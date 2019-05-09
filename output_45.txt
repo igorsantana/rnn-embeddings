@@ -1,0 +1,27 @@
+Precision: 
+                m2vTN     sm2vTN    csm2vTN    csm2vUK
+0           0.0412585   0.122552        NaN        NaN
+1           0.0349296   0.118381        NaN        NaN
+2           0.0428454   0.118489        NaN        NaN
+3            0.039975   0.114174        NaN        NaN
+4           0.0306126   0.120277        NaN        NaN
+mean        0.0379242   0.118775        NaN        NaN
+
+Recall: 
+                m2vTN     sm2vTN    csm2vTN    csm2vUK
+0            0.017325  0.0824465        NaN        NaN
+1           0.0155307  0.0839539        NaN        NaN
+2           0.0201622  0.0878283        NaN        NaN
+3           0.0195875  0.0877979        NaN        NaN
+4           0.0132602  0.0815243        NaN        NaN
+mean        0.0171731  0.0847102        NaN        NaN
+
+F-measure: 
+                m2vTN     sm2vTN    csm2vTN    csm2vUK
+0           0.0189252  0.0728944        NaN        NaN
+1           0.0161477  0.0720207        NaN        NaN
+2           0.0202999  0.0742104        NaN        NaN
+3           0.0199592  0.0747498        NaN        NaN
+4            0.013779  0.0717053        NaN        NaN
+mean        0.0178222  0.0731161        NaN        NaN
+

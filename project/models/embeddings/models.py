@@ -86,7 +86,7 @@ def model_runner(dataset, params):
     if should_run_m2v == False and should_run_sm2v == False:
         printlog('No models to run, exiting the models phase.')
         return
-    df = pd.read_csv('dataset/{}/session_listening_history_reduzido.csv'.format(dataset), sep = ',')
+    df = pd.read_csv('dataset/{}/session_listening_history.csv'.format(dataset), sep = ',')
     if should_run_m2v:
         music2vec(df, params).save('tmp/models/music2vec.model')
     if should_run_sm2v:

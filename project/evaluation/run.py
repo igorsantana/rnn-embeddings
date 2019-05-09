@@ -4,27 +4,28 @@ import numpy                            as np
 import pandas                           as pd
 import project.recsys.algorithms        as runner
 import project.data.preparation   as prep
+import project.evaluation.metrics           as m
 from multiprocessing                    import Process, JoinableQueue
 from gensim.models                      import Word2Vec
 
 def __load_models():
     return Word2Vec.load('tmp/models/music2vec.model'), Word2Vec.load('tmp/models/sessionmusic2vec.model')
 
-def __execute_fold(s_emb, s_songs, u_sess, i, tN, k, queue):
-    m_m2vTN     = runner.execute_algo(s_emb, s_songs, u_sess, 'm2vTN', tN, i,k)
+def __execute_fold(s_emb, s_songs, u_sess, i, tN, k, queue, m2v, sm2v):
+    m_m2vTN     = runner.execute_algo(s_emb, s_songs, u_sess, 'm2vTN', tN, i, k, m2v, sm2v)
     queue.put(('{}_m2vTN'.format(i), m_m2vTN))
-    m_sm2vTN    = runner.execute_algo(s_emb, s_songs, u_sess, 'sm2vTN', tN, i, k)
+    m_sm2vTN    = runner.execute_algo(s_emb, s_songs, u_sess, 'sm2vTN', tN, i, k, m2v, sm2v)
     queue.put(('{}_sm2vTN'.format(i), m_sm2vTN))
-    m_csm2vTN   = runner.execute_algo(s_emb, s_songs, u_sess, 'csm2vTN', tN, i, k)
+    m_csm2vTN   = runner.execute_algo(s_emb, s_songs, u_sess, 'csm2vTN', tN, i, k, m2v, sm2v)
     queue.put(('{}_csm2vTN'.format(i), m_csm2vTN))
-    m_csm2vUK   = runner.execute_algo(s_emb, s_songs, u_sess, 'csm2vUK', tN, i, k)
-    queue.put(('{}_csm2vUK'.format(i), m_csm2vUK))
+    # m_csm2vUK   = runner.execute_algo(s_emb, s_songs, u_sess, 'csm2vUK', tN, i, k, m2v, sm2v)
+    # queue.put(('{}_csm2vUK'.format(i), m_csm2vUK))
     
 
 def execute_cv(conf):    
     topN                    = int(conf['topN'])
     m2v, sm2v               = __load_models()
-    df                      = pd.read_csv('dataset/{}/session_listening_history_reduzido.csv'.format(conf['dataset']))
+    df                      = pd.read_csv('dataset/{}/session_listening_history.csv'.format(conf['dataset']))
     cv                      = int(conf['cross-validation'])
     s_emb, s_songs, u_sess  = prep.split(df, cv, m2v, sm2v)
     prec                    = pd.DataFrame([], index=[0,1,2,3,4], columns=['m2vTN', 'sm2vTN', 'csm2vTN', 'csm2vUK'])
@@ -33,8 +34,7 @@ def execute_cv(conf):
     hitrate                 = pd.DataFrame([], index=[0,1,2,3,4], columns=['m2vTN', 'sm2vTN', 'csm2vTN', 'csm2vUK'])
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     q           = JoinableQueue()
-    proc        = [Process(target=__execute_fold, args=(s_emb, s_songs, u_sess, i, topN, 5, q)) for i in range(cv)]
-
+    proc        = [Process(target=__execute_fold, args=(s_emb, s_songs, u_sess, i, topN, 5, q, m2v, sm2v)) for i in range(cv)]
 
     for p in proc: 
         p.start()
@@ -44,7 +44,7 @@ def execute_cv(conf):
         if num_done > 4: break
         value = q.get()
         fold_algo   = value[0].split('_')
-        if fold_algo[1] == 'csm2vUK': num_done+=1
+        if fold_algo[1] == 'csm2vTN': num_done+=1
         df          = value[1]
         prec.loc[int(fold_algo[0]), fold_algo[1]]       = df['Precision'].mean()
         rec.loc[int(fold_algo[0]), fold_algo[1]]        = df['Recall'].mean()
