@@ -12,10 +12,10 @@ def __load_models():
     return Word2Vec.load('tmp/models/music2vec.model'), Word2Vec.load('tmp/models/sessionmusic2vec.model')
 
 def __execute_fold(s_emb, s_songs, u_sess, i, tN, k, queue, m2v, sm2v):
-    m_m2vTN     = runner.execute_algo(s_emb, s_songs, u_sess, 'm2vTN', tN, i, k, m2v, sm2v)
-    queue.put(('{}_m2vTN'.format(i), m_m2vTN))
-    m_sm2vTN    = runner.execute_algo(s_emb, s_songs, u_sess, 'sm2vTN', tN, i, k, m2v, sm2v)
-    queue.put(('{}_sm2vTN'.format(i), m_sm2vTN))
+    # m_m2vTN     = runner.execute_algo(s_emb, s_songs, u_sess, 'm2vTN', tN, i, k, m2v, sm2v)
+    # queue.put(('{}_m2vTN'.format(i), m_m2vTN))
+    # m_sm2vTN    = runner.execute_algo(s_emb, s_songs, u_sess, 'sm2vTN', tN, i, k, m2v, sm2v)
+    # queue.put(('{}_sm2vTN'.format(i), m_sm2vTN))
     m_csm2vTN   = runner.execute_algo(s_emb, s_songs, u_sess, 'csm2vTN', tN, i, k, m2v, sm2v)
     queue.put(('{}_csm2vTN'.format(i), m_csm2vTN))
     # m_csm2vUK   = runner.execute_algo(s_emb, s_songs, u_sess, 'csm2vUK', tN, i, k, m2v, sm2v)

@@ -32,12 +32,12 @@ def run_m2vTN(song_emb, ses_song, user_sess, topN, i, mv):
         metrics  = []
         for session in sessions:
             if len(session) > 1:
-                test            = session[len(session)//2:]
-                song_emb['cos'] = [1 - x[0] for x in cdist(np.array(song_emb['music2vec'].tolist()), np.array([pref]), metric='cosine')]
-                topn            = list(song_emb.nlargest(topN, 'cos').index.values)
-                p               = m.Precision(topn, test)
-                r               = m.Recall(topn, test)
-                fm              = m.FMeasure(p, r)
+                test    = session[len(session)//2:]
+                topn    = mv.similar_by_vector(pref, topn=topN, restrict_vocab=None)
+                topn    = [x[0] for x in topn]
+                p       = m.Precision(topn, test)
+                r       = m.Recall(topn, test)
+                fm      = m.FMeasure(p, r)
                 metrics.append([p, r, fm])
         mean = np.mean(metrics, axis=0)
         return {'Precision': mean[0], 'Recall': mean[1], 'F-measure': mean[2]}
@@ -54,9 +54,9 @@ def run_sm2vTN(song_emb, ses_song, user_sess, topN, i, mv):
         for session in sessions:
             if len(session) > 1:
                 test            = session[len(session)//2:]
-                pref            = np.mean(song_emb.loc[session[:len(session)//2], 'sessionmusic2vec'].values.tolist(), axis=0)
-                song_emb['cos'] = [1 - x[0] for x in cdist(np.array(song_emb['sessionmusic2vec'].tolist()), np.array([pref]), metric='cosine')]
-                topn            = list(song_emb.nlargest(topN, 'cos').index.values)
+                pref            = np.mean(song_emb.loc[session[:len(session)//2], 'sessionmusic2vec'], axis=0)
+                topn            = mv.similar_by_vector(pref, topn=topN, restrict_vocab=None)
+                topn            = [x[0] for x in topn]
                 p               = m.Precision(topn, test)
                 r               = m.Recall(topn, test)
                 fm              = m.FMeasure(p, r)
@@ -78,8 +78,8 @@ def run_csm2vTN(song_emb, ses_song, user_sess, topN, i):
         for session in sessions:
             if len(session) > 1:
                 test            = session[len(session)//2:]
-                c_pref          = np.mean(song_emb.loc[session[:len(session)//2], 'sessionmusic2vec'].values.tolist(), axis=0)
-                cos_u_pref      = cdist(np.array(song_emb['nmusic2vec'].tolist()),          np.array([u_pref]), metric='cosine')
+                c_pref          = np.mean(song_emb.loc[session[:len(session)//2], 'sessionmusic2vec'], axis=0)
+                cos_u_pref      = cdist(np.array(song_emb['music2vec'].tolist()),           np.array([u_pref]), metric='cosine')
                 cos_c_pref      = cdist(np.array(song_emb['sessionmusic2vec'].tolist()),    np.array([c_pref]), metric='cosine')
                 song_emb['cos'] = [x[0] + y[0] for x, y in zip(cos_u_pref, cos_c_pref)]
                 topn            = list(song_emb.nlargest(topN, 'cos').index.values)

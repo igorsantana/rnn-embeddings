@@ -16,7 +16,7 @@ algorithms:
 evaluation:
   dataset: 'xiami'
   cross-validation: 5
-  topN: 10
+  topN: 5
   metrics: ['precision', 'recall', 'hitrate', 'f1']
 logfile: 'exec.log'
 num_parallel: 5
