@@ -3,6 +3,7 @@ import time
 import math
 import logging
 import itertools
+import operator
 import statistics                           as s
 import multiprocessing                      as mp
 import numpy                                as np
@@ -47,10 +48,11 @@ def run_m2vTN(song_emb, ses_song, user_sess, topN, i, mv):
 
 def run_sm2vTN(song_emb, ses_song, user_sess, topN, i, mv):
     printlog('Started to evaluate users for the sm2vTN algorithm')
-    users   = user_sess[user_sess['tt_{}'.format(i)] == 'test'].index.values
+    users         = user_sess[user_sess['tt_{}'.format(i)] == 'test'].index.values
     metrics_final = []
-    for sessions in [ses_song.loc[user_sess.loc[user, 'sessions'], 'songs'].values for user in users]:
-        metrics = []
+    def map_user(user):
+        sessions = ses_song.loc[user_sess.loc[user, 'sessions'], 'songs'].values
+        metrics  = []
         for session in sessions:
             if len(session) > 1:
                 test            = session[len(session)//2:]
@@ -62,37 +64,46 @@ def run_sm2vTN(song_emb, ses_song, user_sess, topN, i, mv):
                 fm              = m.FMeasure(p, r)
                 metrics.append([p, r, fm])
         mean = np.mean(metrics, axis=0)
-        metrics_final.append({'Precision': mean[0], 'Recall': mean[1], 'F-measure': mean[2]})
-    printlog('Finished to evaluate users for the sm2vTN algorithm')
-    return pd.DataFrame(metrics_final)
+        return {'Precision': mean[0], 'Recall': mean[1], 'F-measure': mean[2]}
 
-def run_csm2vTN(song_emb, ses_song, user_sess, topN, i):
+    metrics_final = np.vectorize(map_user)(users)
+    printlog('Finished to evaluate users for the sm2vTN algorithm')
+    return pd.DataFrame(list(metrics_final))
+    
+
+def run_csm2vTN(song_emb, ses_song, user_sess, topN, i, mv, smv):
     printlog('Started to evaluate users for the csm2vTN algorithm')
-   
-    users   = user_sess[user_sess['tt_{}'.format(i)] == 'test'].index.values
+    users         = user_sess[user_sess['tt_{}'.format(i)] == 'test'].index.values
     metrics_final = []
-    for sessions in [ses_song.loc[user_sess.loc[user, 'sessions'], 'songs'].values for user in users]:
-        metrics = []
-        train   = [session[:len(session)//2] for session in sessions]
-        u_pref    = np.mean(song_emb.loc[sum(train, []), 'music2vec'], axis=0)
+    
+    def map_user(user):
+        sessions    = ses_song.loc[user_sess.loc[user, 'sessions'], 'songs'].values
+        all_songs   = song_emb.index.values.tolist()
+        train       = [session[:len(session)//2] for session in sessions]
+        u_pref      = np.mean(song_emb.loc[sum(train, []), 'music2vec'], axis=0)
+        u_sim       = [1 - dist for dist in mv.wv.distances(u_pref, all_songs)]
+        metrics     = []
         for session in sessions:
             if len(session) > 1:
                 test            = session[len(session)//2:]
                 c_pref          = np.mean(song_emb.loc[session[:len(session)//2], 'sessionmusic2vec'], axis=0)
-                cos_u_pref      = cdist(np.array(song_emb['music2vec'].tolist()),           np.array([u_pref]), metric='cosine')
-                cos_c_pref      = cdist(np.array(song_emb['sessionmusic2vec'].tolist()),    np.array([c_pref]), metric='cosine')
-                song_emb['cos'] = [x[0] + y[0] for x, y in zip(cos_u_pref, cos_c_pref)]
-                topn            = list(song_emb.nlargest(topN, 'cos').index.values)
+                c_sim           = [1 - dist for dist in mv.wv.distances(c_pref, all_songs)]
+                sim             = list(zip(u_sim, c_sim))
+                sim             = [x[0] + x[1] for x in sim]
+                songs_sim       = list(zip(all_songs, sim))
+                songs_sim.sort(key= operator.itemgetter(1), reverse=True)
+                topn            = [x[0] for x in songs_sim[:topN]]
                 p               = m.Precision(topn, test)
                 r               = m.Recall(topn, test)
                 fm              = m.FMeasure(p, r)
                 metrics.append([p, r, fm])
         mean = np.mean(metrics, axis=0)
-        metrics_final.append({'Precision': mean[0], 'Recall': mean[1], 'F-measure': mean[2]})
+        return {'Precision': mean[0], 'Recall': mean[1], 'F-measure': mean[2]}
 
+    metrics_final = np.vectorize(map_user)(users)
     printlog('Finished to evaluate users for the csm2vTN algorithm')
-
-    return pd.DataFrame(metrics_final)
+    print(metrics_final)
+    return pd.DataFrame(list(metrics_final))
 
 def run_csm2vUK(song_emb, ses_song, user_sess, topN, i, k):
     printlog('Started to evaluate users for the csm2vUK algorithm')
@@ -148,7 +159,7 @@ def execute_algo(s_embeddings, s_songs, u_sessions, name, topN, i, k, m2v, sm2v)
     if name == 'sm2vTN':
         return run_sm2vTN(s_embeddings, s_songs, u_sessions, topN, i, sm2v)
     if name == 'csm2vTN':
-        return run_csm2vTN(s_embeddings, s_songs, u_sessions, topN, i)
+        return run_csm2vTN(s_embeddings, s_songs, u_sessions, topN, i, m2v, sm2v)
     if name == 'csm2vUK':        
         return run_csm2vUK(s_embeddings, s_songs, u_sessions, topN, i, k)
     return 0
