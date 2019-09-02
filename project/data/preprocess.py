@@ -10,7 +10,7 @@ from datetime import datetime
 
 fmt_t       = lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M')
 format 		= lambda str_ : '[' + str(datetime.now().strftime("%d/%m/%y %H:%M:%S")) + '] ' + str_
-printlog    = lambda x: print(format(x))
+printlog    = lambda x: print(format(x), file=open('output.log', 'a'))
 
 def percentage(part, whole):
   return 100 * float(part)/float(whole)

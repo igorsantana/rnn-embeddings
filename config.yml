@@ -7,15 +7,16 @@ models:
     epochs: 5
     vector_dim: 300
 session:
-  interval: 30
+  interval: 60
 algorithms:
   m2vTN: True
   sm2vTN: True
   csm2vTN: True
   csm2vUK: True
 evaluation:
-  dataset: 'xiami'
+  dataset: 'lastfm-lsii'
   cross-validation: 5
+  k: 5
   topN: 5
   metrics: ['precision', 'recall', 'hitrate', 'f1']
 logfile: 'exec.log'

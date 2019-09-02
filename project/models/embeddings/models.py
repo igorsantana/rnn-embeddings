@@ -72,23 +72,24 @@ def session_music2vec(data, p):
 #                     epochs=epochs, min_count=1, compute_loss=True)
 
 def model_runner(dataset, params):
-    printlog('Checking if the models are in tmp/models folder')
+    printlog('Checking if the models are in tmp/{}/models folder'.format(dataset))
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     should_run_m2v = True
     should_run_sm2v = True
-    for file in os.listdir('tmp/models'):
+    for file in os.listdir('tmp/{}/models/'.format(dataset)):
+        print(file)
         if 'music2vec.model' == file:
-            printlog('There\'s already a music2vec model in the tmp/models folder.')
+            printlog('There\'s already a music2vec model in the tmp/{}/models folder.'.format(dataset))
             should_run_m2v = False
         if 'sessionmusic2vec.model' == file:
-            printlog('There\'s already a sessionmusic2vec model in the tmp/models folder.')
+            printlog('There\'s already a sessionmusic2vec model in the tmp/{}/models folder.'.format(dataset))
             should_run_sm2v = False
     if should_run_m2v == False and should_run_sm2v == False:
         printlog('No models to run, exiting the models phase.')
         return
     df = pd.read_csv('dataset/{}/session_listening_history.csv'.format(dataset), sep = ',')
     if should_run_m2v:
-        music2vec(df, params).save('tmp/models/music2vec.model')
+        music2vec(df, params).save('tmp/{}/models/music2vec.model'.format(dataset))
     if should_run_sm2v:
-        session_music2vec(df, params).save('tmp/models/sessionmusic2vec.model')
+        session_music2vec(df, params).save('tmp/{}/models/sessionmusic2vec.model'.format(dataset))
 

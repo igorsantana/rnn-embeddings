@@ -1,4 +1,6 @@
 import yaml
+import numba
+import numpy as np
 import multiprocessing                      as mp
 import project.data.preprocess              as pp
 import project.models.embeddings.models     as emb
@@ -15,7 +17,7 @@ if __name__ == '__main__':
     printlog('Starting the process, reading the configuration file.')
     conf = yaml.safe_load(open('config.yml'))
 
-    mp.set_start_method('spawn')
+#     # # mp.set_start_method('spawn')
 
     pp.preprocess(conf['evaluation']['dataset'], conf['session']['interval'])
 
@@ -23,3 +25,13 @@ if __name__ == '__main__':
 
     r.execute_cv(conf['evaluation'])
 
+    
+
+    # u = np.random.rand(100)
+    # print(u)
+    # print(u.dtype)
+    # M = np.random.rand(100000, 100)
+    # print(M)
+    # print(M.dtype)
+
+    # print(fast_cosine_matrix(u, M))
