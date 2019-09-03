@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
     emb.model_runner(conf['evaluation']['dataset'], conf['models']['music2vec'])
 
-    r.execute_cv(conf['evaluation'])
+    r.execute_cv(conf['evaluation'], conf['logfile'])
 
     
 

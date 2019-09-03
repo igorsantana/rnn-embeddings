@@ -2,15 +2,17 @@ import os
 import csv
 import math
 import json
+import yaml
 import logging
 import numpy 	as np
 import pandas   as pd
 import multiprocessing as mp
 from datetime import datetime
 
+conf        = yaml.safe_load(open('config.yml'))
 fmt_t       = lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M')
 format 		= lambda str_ : '[' + str(datetime.now().strftime("%d/%m/%y %H:%M:%S")) + '] ' + str_
-printlog    = lambda x: print(format(x), file=open('output.log', 'a'))
+printlog    = lambda x: print(format(x), file=open(conf['logfile'], 'a'))
 
 def percentage(part, whole):
   return 100 * float(part)/float(whole)
@@ -26,8 +28,6 @@ def sessionize_user(df, session_time, writer):
             if c1 or c2: s_counter+=1
         writer.writerow([getattr(row, 'user'), getattr(row, 'song'), getattr(row, 'timestamp'), s_counter])
         print('Sessionizing the dataset: {}%'.format(round(percentage(idx, len(df.index)),2)), end='\r', flush=True)
-
-
 
 
 def preprocess(dataset, t_session):
