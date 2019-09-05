@@ -16,7 +16,7 @@ class Matrixes():
         self.ix_u_songs      = { v:self.u_pref(k)[1] for (k,v) in self.ix_users.items() }
         self.m2v_songs       = self.songs.m2v.tolist()
         self.m2v_songs       = np.array(self.m2v_songs, dtype=np.float)
-        self.sm2v_songs      = self.songs.m2v.tolist()
+        self.sm2v_songs      = self.songs.sm2v.tolist()
         self.sm2v_songs      = np.array(self.sm2v_songs, dtype=np.float)
 
     def song_ix(self, song):

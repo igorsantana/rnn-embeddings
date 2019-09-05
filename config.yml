@@ -14,10 +14,10 @@ algorithms:
   csm2vTN: True
   csm2vUK: True
 evaluation:
-  dataset: 'lastfm-lsii'
+  dataset: 'xiami'
   cross-validation: 5
   k: 5
   topN: 5
   metrics: ['precision', 'recall', 'hitrate', 'f1']
-logfile: 'exec.log'
+logfile: 'output-xiami.log'
 num_parallel: 5
