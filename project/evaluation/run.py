@@ -16,10 +16,10 @@ def __load_models(dataset, is_doc):
 
 def __execute_fold(users, songs, fold, topN, k, ds, is_doc, m2v, sm2v):
 	m               = Matrixes(users, songs, ds, is_doc, m2v, sm2v)
-	# runner.execute_algo('m2vTN',   users, songs, fold, topN, k, m)
+	runner.execute_algo('m2vTN',   users, songs, fold, topN, k, m)
 	runner.execute_algo('sm2vTN',  users, songs, fold, topN, k, m)
-	# runner.execute_algo('csm2vTN', users, songs, fold, topN, k, m)
-	# runner.execute_algo('csm2vUK', users, songs, fold, topN, k, m)
+	runner.execute_algo('csm2vTN', users, songs, fold, topN, k, m)
+	runner.execute_algo('csm2vUK', users, songs, fold, topN, k, m)
 	
 def execute_cv(conf, file, is_doc):    
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)

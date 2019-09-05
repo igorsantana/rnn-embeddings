@@ -30,14 +30,16 @@ class Matrixes():
 
     def u_pref(self,user):
         history      = self.users[self.users.index == user]['history'].values.tolist()[0]
-        flat_history = [song for session in history for song in session[:len(session)//2]]
+        flat_history = [song for n_s, session in history for song in session[:len(session)//2]]
         unique_songs = list(set(flat_history))
         if self.is_doc:
             return self.m2v.docvecs[user], unique_songs
         flat_history = [self.songs.loc[song, 'm2v'] for song in flat_history]
         return np.mean(flat_history, axis=0), unique_songs
 
-    def c_pref(self, songs):
+    def c_pref(self, n_s, songs):
+        if self.is_doc:
+            return self.sm2v.docvecs[n_s]
         flat_vecs       = self.songs.loc[songs, 'sm2v'].tolist()
         return np.mean(np.array(flat_vecs), axis=0)
             
