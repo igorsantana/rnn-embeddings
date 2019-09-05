@@ -6,6 +6,7 @@ models:
     learning_rate: 0.025
     epochs: 5
     vector_dim: 300
+  is_doc: False
 session:
   interval: 60
 algorithms:
