@@ -24,7 +24,7 @@ def run_m2vTN(users,songs, fold, topN, mat):
     user_metrics    = []
 
     for user in test_users:
-        sessions        = [session for session in users.loc[user, 'history'] if len(session) > 1]
+        sessions        = [session for n_s, session in users.loc[user, 'history'] if len(session) > 1]
         cos             = cosine_similarity(mat.u_pref(user)[0].reshape(1, -1), mat.m2v_songs)[0]
         top_n           = mat.get_n_largest(cos, topN)
         metrics         = []
@@ -45,11 +45,11 @@ def run_sm2vTN(users,songs, fold, topN, mat):
     test_users      = users[users['tt_{}'.format(fold)] == 'test'].index.tolist()
     user_metrics    = []
     for user in test_users:
-        sessions        = [session for session in users.loc[user, 'history'] if len(session) > 1]
+        sessions        = [(n_s, session) for n_s, session in users.loc[user, 'history'] if len(session) > 1]
         metrics         = []
-        for session in sessions:
+        for n_s, session in sessions:
             test_session    = test(session)
-            c_pref          = mat.c_pref(train(session))
+            c_pref          = mat.c_pref(n_s, train(session))
             cos             = cosine_similarity(c_pref.reshape(1, -1), mat.sm2v_songs)[0]
             top_n           = mat.get_n_largest(cos, topN)
             p               = m.Precision(top_n, test_session)
@@ -68,13 +68,13 @@ def run_csm2vTN(users,songs, fold, topN, mat):
     test_users      = users[users['tt_{}'.format(fold)] == 'test'].index.tolist()
     user_metrics    = []
     for user in test_users:
-        sessions            = [session for session in users.loc[user, 'history'] if len(session) > 1]
+        sessions            = [(n_s, session) for n_s, session in users.loc[user, 'history'] if len(session) > 1]
         u_pref              = mat.u_pref(user)[0]
         cos                 = cosine_similarity(u_pref.reshape(1, -1), mat.m2v_songs)[0]
         metrics             = []
-        for session in sessions:
-            test_session               = test(session)
-            c_pref                  = mat.c_pref(train(session))
+        for (n_s, session) in sessions:
+            test_session            = test(session)
+            c_pref                  = mat.c_pref(n_s, train(session))
             c_cos                   = cosine_similarity(c_pref.reshape(1, -1), mat.m2v_songs)[0]
             f_cos                   = np.sum([cos, c_cos], axis=0)
             top_n                   = mat.get_n_largest(f_cos, topN)
@@ -109,11 +109,11 @@ def run_csm2vUK(users, songs, fold, topN, k, mat):
     for user in t_users:
         sim_ix          = np.argpartition(matrix_users[mat.ix_user(user)], -k)[-k:]
         songs_sim       = np.array([pref(mat.ix_user(user), sim_ix, s) for s in all_songs])
-        sessions        = [session for session in users.loc[user, 'history'] if len(session) > 1]
+        sessions        = [(n_s, session) for n_s, session in users.loc[user, 'history'] if len(session) > 1]
         metrics         = []
-        for session in sessions:
+        for (n_s, session) in sessions:
             test_session    = test(session)
-            c_pref          = mat.c_pref(train(session))
+            c_pref          = mat.c_pref(n_s, train(session))
             cos             = cosine_similarity(c_pref.reshape(1, -1), np.array(songs['sm2v'].values.tolist()))[0]
             sum_v           = np.sum([songs_sim, cos], axis=0)
             top_n           = mat.get_n_largest(sum_v, topN)

@@ -4,16 +4,17 @@ import math
 from sklearn.metrics.pairwise               import cosine_similarity
 
 class Matrixes():
-    def __init__(self, users, songs, ds):
+    def __init__(self, users, songs, ds, is_doc, m2v, sm2v):
         self.ds              = ds
+        self.m2v             = m2v
+        self.sm2v            = sm2v
         self.users           = users
         self.songs           = songs
+        self.is_doc          = is_doc
+        self.songs_ix        = { v:k for k,v in enumerate(songs.index) }
+        self.ix_users        = { v:k for k,v in enumerate(users.index) }
         self.num_users       = len(users.index)
         self.num_songs       = len(songs.index)
-        self.ix_users        = { v:k for k,v in enumerate(users.index) }
-        self.songs_ix        = { v:k for k,v in enumerate(songs.index) }
-        self.ix_pref         = { v:self.u_pref(k)[0] for (k,v) in self.ix_users.items() }
-        self.ix_u_songs      = { v:self.u_pref(k)[1] for (k,v) in self.ix_users.items() }
         self.m2v_songs       = self.songs.m2v.tolist()
         self.m2v_songs       = np.array(self.m2v_songs, dtype=np.float)
         self.sm2v_songs      = self.songs.sm2v.tolist()
@@ -21,17 +22,22 @@ class Matrixes():
 
     def song_ix(self, song):
         return self.songs_ix[song]
+
     def ix_user(self, ix):
         return self.ix_users[ix]
 
     def u_pref(self,user):
         history      = self.users[self.users.index == user]['history'].values.tolist()[0]
-        flat_history = [song for session in history for song in session[:len(session)//2]]
+        flat_history = [song for n_s, session in history for song in session[:len(session)//2]]
         unique_songs = list(set(flat_history))
+        if self.is_doc:
+            return self.m2v.docvecs[user], unique_songs
         flat_history = [self.songs.loc[song, 'm2v'] for song in flat_history]
         return np.mean(flat_history, axis=0), unique_songs
 
-    def c_pref(self, songs):
+    def c_pref(self, n_s, songs):
+        if self.is_doc:
+            return self.sm2v.docvecs[n_s]
         flat_vecs       = self.songs.loc[songs, 'sm2v'].tolist()
         return np.mean(np.array(flat_vecs), axis=0)
             

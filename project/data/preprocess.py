@@ -7,7 +7,7 @@ import logging
 import numpy 	as np
 import pandas   as pd
 import multiprocessing as mp
-from datetime import datetime
+from datetime import datetime, timedelta
 
 conf        = yaml.safe_load(open('config.yml'))
 fmt_t       = lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M')
@@ -17,33 +17,35 @@ printlog    = lambda x: print(format(x), file=open(conf['logfile'], 'a'))
 def percentage(part, whole):
   return 100 * float(part)/float(whole)
 
-def sessionize_user(df, session_time, writer):
-    s_counter = 0
-    for row in df.itertuples(index=True):
-        idx = getattr(row, 'Index')
-        if idx != 0:
-            dif = fmt_t(getattr(df.iloc[idx - 1], 'timestamp')) - fmt_t(getattr(row, 'timestamp'))  
-            c1  = abs(int(round(dif.total_seconds() / 60))) >  session_time
-            c2  = (getattr(df.iloc[idx - 1], 'user') != getattr(row, 'user'))
-            if c1 or c2: s_counter+=1
-        writer.writerow([getattr(row, 'user'), getattr(row, 'song'), getattr(row, 'timestamp'), s_counter])
-        print('Sessionizing the dataset: {}%'.format(round(percentage(idx, len(df.index)),2)), end='\r', flush=True)
+def sessionize_user(df, session_time, s_path):
+    df['timestamp'] = df['timestamp'].astype('datetime64')
+    df['dif']       = df.timestamp.diff()
+    df['session']   = df.apply(lambda x: 'NEW_SESSION' if x.dif >= timedelta(minutes=session_time) else 'SAME_SESSION', axis=1)
+    s_no = 0
+    l_u  = ''
+    f = open(s_path, 'w+')
+    print(','.join(['user', 'song', 'timestamp', 'session']), file=f)
+    print('Criando sessões no arquivo {}'.format(s_path))
+    for row in df.values:
+        if s_no == 0:
+            l_u = row[0]
+        if (row[4] == 'NEW_SESSION' and l_u  == row[0]) or (l_u  != row[0]):
+            s_no+=1
+        row[3] = 's{}'.format(s_no)
+        l_u = row[0]
+        row[2] = str(row[2])
+        print(','.join(row[:-1]), file=f)
+    
 
 
 def preprocess(dataset, t_session):
-    printlog('Checking if the dataset {} is already sessionized.'.format(dataset))
     if os.path.exists('dataset/{}/session_listening_history.csv'.format(dataset)):
         printlog('The dataset {} is already sessionized, preprocessing is done.'.format(dataset))
         return
-    else: 
-        print('Start to preprocess the dataset.')
-    logging.info(format('Started reading the dataset'))
+    print('Start to preprocess the dataset.')
     df		= pd.read_csv('dataset/{}/listening_history.csv'.format(dataset), sep = ',')
-    logging.info(format('The dataset has been read'))
     logging.info(format('Starting to generate the sessionized dataset'))
-    f       = csv.writer(open('dataset/{}/session_listening_history.csv'.format(dataset),'w'))
-    f.writerow(['user','song','timestamp', 'session'])
-    sessionize_user(df, t_session, f)
+    sessionize_user(df, t_session, 'dataset/{}/session_listening_history.csv'.format(dataset))
     logging.info(format('Done sessionizing the dataset.'))
     
 
