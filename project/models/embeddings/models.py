@@ -6,7 +6,7 @@ import numpy                as np
 from gensim.models          import Word2Vec, Doc2Vec
 from gensim.models.doc2vec  import TaggedDocument
 from datetime               import datetime
-
+from glove                  import Glove, Corpus
 format 		= lambda str_ : '[' + str(datetime.now().strftime("%d/%m/%y %H:%M:%S")) + '] ' + str_
 printlog    = lambda x: print(format(x))
 
@@ -55,20 +55,43 @@ def session_doc2vec(data, p):
                     sample=float(p['down_sample']), negative=int(p['negative_sample']),
                     epochs=int(p['epochs']), min_count=1, compute_loss=True)
 
+def glove_user(data, p):
+    sentences = data_prep('user', data)
+    corpus = Corpus() 
+    corpus.fit(sentences, window=int(p['window_size']))
+    glove = Glove(no_components=p['vector_dim'], learning_rate=float(p['learning_rate']))
+    glove.fit(corpus.matrix, epochs=int(p['epochs']), no_threads=4, verbose=True)
+    glove.add_dictionary(corpus.dictionary)
+    return glove
+
+def glove_session(data, p):
+    sentences = data_prep('session', data)
+    corpus = Corpus() 
+    corpus.fit(sentences, window=int(p['window_size']))
+    glove = Glove(no_components=p['vector_dim'], learning_rate=float(p['learning_rate']))
+    glove.fit(corpus.matrix, epochs=int(p['epochs']), no_threads=4, verbose=True)
+    glove.add_dictionary(corpus.dictionary)
+    return glove
+
 def model_runner(dataset, params):
     m2v     =  not os.path.isfile('tmp/{}/models/music2vec.model'.format(dataset)) 
-    sm2v    =  not os.path.isfile('tmp/{}/models/sessionmusic2vec.model'.format(dataset)) 
-    if ((not m2v) and (not sm2v)):
+    sm2v    =  not os.path.isfile('tmp/{}/models/smusic2vec.model'.format(dataset)) 
+    gm2v    =  not os.path.isfile('tmp/{}/models/m2v_glove.model'.format(dataset)) 
+    gsm2v    =  not os.path.isfile('tmp/{}/models/sm2v_glove.model'.format(dataset)) 
+    df = pd.read_csv('dataset/{}/session_listening_history.csv'.format(dataset), sep = ',')
+
+    if ((not m2v) and (not sm2v) and (not gm2v) and (not gsm2v)):
         printlog('No models to run')
         return
-    df = pd.read_csv('dataset/{}/session_listening_history.csv'.format(dataset), sep = ',')
+    glove_user(df, params['music2vec']).save('tmp/{}/models/m2v_glove.model'.format(dataset))
+    glove_session(df, params['music2vec']).save('tmp/{}/models/sm2v_glove.model'.format(dataset))
     if m2v:
         printlog('Started the m2v model.')
         music2vec(df, params['music2vec']).save('tmp/{}/models/music2vec.model'.format(dataset))
     if sm2v:
         printlog('Started the sm2v model.')
-        session_music2vec(df, params['music2vec']).save('tmp/{}/models/sessionmusic2vec.model'.format(dataset))
+        session_music2vec(df, params['music2vec']).save('tmp/{}/models/smusic2vec.model'.format(dataset))
     if params['is_doc'] == True:
         printlog('Started the d2v and sd2v model.')
         doc2vec(df, params['music2vec']).save('tmp/{}/models/doc2vec.model'.format(dataset))
-        session_doc2vec(df, params['music2vec']).save('tmp/{}/models/sessiondoc2vec.model'.format(dataset))
+        session_doc2vec(df, params['music2vec']).save('tmp/{}/models/sdoc2vec.model'.format(dataset))

@@ -7,6 +7,7 @@ models:
     epochs: 5
     vector_dim: 300
   is_doc: False
+  is_glove: False
 session:
   interval: 60
 algorithms:
@@ -20,5 +21,18 @@ evaluation:
   k: 5
   topN: 5
   metrics: ['precision', 'recall', 'hitrate', 'f1']
-logfile: 'exec.log'
+logfile: 'exec_glove.log'
 num_parallel: 5
+embeddings:
+  glove: 
+    usage: False
+    path: 'm2v_glove'
+  music2vec: 
+    usage: True
+    path: 'music2vec'
+  doc2vec: 
+    usage: False
+    path: 'doc2vec'
+  rnn: 
+    usage: False
+    path: ''
