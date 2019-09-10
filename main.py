@@ -19,7 +19,7 @@ if __name__ == '__main__':
 
     pp.preprocess(conf['evaluation']['dataset'], conf['session']['interval'])
 
-    emb.model_runner(conf['evaluation']['dataset'], conf['models'])
+    emb.model_runner(conf['evaluation']['dataset'], conf['models'], conf['embeddings'])
 
     r.execute_cv(conf['evaluation'], conf['logfile'], conf['embeddings'])
 
