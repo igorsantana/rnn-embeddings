@@ -2,10 +2,16 @@ import pandas as pd
 import numpy as np
 from gensim.models                      import Word2Vec, Doc2Vec
 from glove 								import Glove
-# def __load_models(dataset):
-# 	if is_doc:
-# 		return Doc2Vec.load('tmp/{}/models/doc2vec.model'.format(dataset)), Doc2Vec.load('tmp/{}/models/sessiondoc2vec.model'.format(dataset))
-# 	return Word2Vec.load('tmp/{}/models/music2vec.model'.format(dataset)), Word2Vec.load('tmp/{}/models/sessionmusic2vec.model'.format(dataset))
+
+def _rnn_load(ds, path, songs):
+    df          = pd.read_csv('tmp/{}/models/{}'.format(ds, path), sep=';', header=None)
+    df.columns  = ['id', 'emb']
+    df['emb']   = df['emb'].apply(lambda x: np.fromstring(x.replace('[', '').replace(']', ''), sep=','))
+    df.index    = df['id']
+    emb_dict    = {}
+    for ix in df['id'].values:
+        emb_dict[ix] = df.loc[ix, 'emb']
+    return emb_dict
 
 def __w2v_load(ds, path, songs):
     wv = Word2Vec.load('tmp/{}/models/{}.model'.format(ds, path)).wv
@@ -29,6 +35,8 @@ def get_embeddings(conf, ds, songs):
         return __w2v_load(ds, music2vec['path'], songs), __w2v_load(ds, 's' + music2vec['path'], songs)
     if doc2vec['usage']:
         return __w2v_load(ds, doc2vec['path'], songs), __w2v_load(ds, 's' + doc2vec['path'], songs)
+    if rnn['usage']:
+        return _rnn_load(ds, rnn['path'], songs), _rnn_load(ds, rnn['path'], songs)
     return {},{} 
 
 def split(df, cv, embeddings_conf, dataset):

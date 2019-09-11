@@ -2,6 +2,8 @@ import os
 import numpy as np
 import math
 from sklearn.metrics.pairwise               import cosine_similarity
+import warnings
+
 
 class Matrixes():
     def __init__(self, users, songs, ds):
@@ -27,10 +29,11 @@ class Matrixes():
 
     def u_pref(self,user):
         history      = self.users[self.users.index == user]['history'].values.tolist()[0]
-        flat_history = [song for n_s, session in history for song in session[:len(session)//2]]
+        flat_history = [song for n_s, session in history for song in session]
         unique_songs = list(set(flat_history))
-        flat_history = [self.songs.loc[song, 'm2v'] for song in flat_history]
-        return np.mean(flat_history, axis=0), unique_songs
+        flat_history = [self.songs.loc[song, 'm2v']e tiram  for song in flat_history]
+        mean         = np.mean(flat_history, axis=0)
+        return mean, unique_songs
 
     def c_pref(self, n_s, songs):
         flat_vecs       = self.songs.loc[songs, 'sm2v'].tolist()

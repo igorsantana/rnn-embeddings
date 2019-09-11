@@ -74,20 +74,36 @@ def glove_session(data, p):
     return glove
 
 def model_runner(dataset, params, embeddings):
-    m2v     =  os.path.isfile('tmp/{}/models/{}.model'.format(dataset, embeddings['music2vec']['path'])) 
-    sm2v    =  os.path.isfile('tmp/{}/models/{}.model'.format(dataset, 's' + embeddings['music2vec']['path'])) 
-    gm2v    =  os.path.isfile('tmp/{}/models/{}.model'.format(dataset, embeddings['glove']['path'])) 
-    gsm2v   =  os.path.isfile('tmp/{}/models/{}.model'.format(dataset, 's' + embeddings['glove']['path'])) 
+    
+    
     df = pd.read_csv('dataset/{}/session_listening_history.csv'.format(dataset), sep = ',')
 
     if embeddings['glove']['usage']:
+        gm2v    =  os.path.isfile('tmp/{}/models/{}.model'.format(dataset, embeddings['glove']['path'])) 
+        gsm2v   =  os.path.isfile('tmp/{}/models/{}.model'.format(dataset, 's' + embeddings['glove']['path'])) 
+
         if (not gm2v) or (not gsm2v):
+            printlog('Started the glove model.')
             glove_user(df, params['music2vec']).save('tmp/{}/models/{}.model'.format(dataset, embeddings['glove']['path']))
             glove_session(df, params['music2vec']).save('tmp/{}/models/{}.model'.format(dataset, 's' + embeddings['glove']['path']))
-        return
+            return
+
     if embeddings['music2vec']['usage']:
-        printlog('Started the m2v model.')
+        m2v     =  os.path.isfile('tmp/{}/models/{}.model'.format(dataset, embeddings['music2vec']['path'])) 
+        sm2v    =  os.path.isfile('tmp/{}/models/{}.model'.format(dataset, 's' + embeddings['music2vec']['path'])) 
+
         if (not m2v) or (not sm2v):
+            printlog('Started the m2v model.')
             music2vec(df, params['music2vec']).save('tmp/{}/models/{}.model'.format(dataset, embeddings['music2vec']['path']))
             session_music2vec(df, params['music2vec']).save('tmp/{}/models/{}.model'.format(dataset, 's' + embeddings['music2vec']['path']))
+            return
+
+    if embeddings['doc2vec']['usage']:
+        m2v     =  os.path.isfile('tmp/{}/models/{}.model'.format(dataset, embeddings['doc2vec']['path'])) 
+        sm2v    =  os.path.isfile('tmp/{}/models/{}.model'.format(dataset, 's' + embeddings['doc2vec']['path'])) 
+        
+        if (not m2v) or (not sm2v):
+            printlog('Started the m2v model.')
+            doc2vec(df, params['music2vec']).save('tmp/{}/models/{}.model'.format(dataset, embeddings['doc2vec']['path']))
+            session_doc2vec(df, params['music2vec']).save('tmp/{}/models/{}.model'.format(dataset, 's' + embeddings['doc2vec']['path']))
             return
