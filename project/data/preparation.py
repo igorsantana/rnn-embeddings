@@ -1,12 +1,7 @@
 import pandas as pd
 import numpy as np
 from gensim.models                      import Word2Vec, Doc2Vec
-from glove 								import Glove
-# def __load_models(dataset):
-# 	if is_doc:
-# 		return Doc2Vec.load('tmp/{}/models/doc2vec.model'.format(dataset)), Doc2Vec.load('tmp/{}/models/sessiondoc2vec.model'.format(dataset))
-# 	return Word2Vec.load('tmp/{}/models/music2vec.model'.format(dataset)), Word2Vec.load('tmp/{}/models/sessionmusic2vec.model'.format(dataset))
-
+from glove 		
 def __w2v_load(ds, path, songs):
     wv = Word2Vec.load('tmp/{}/models/{}.model'.format(ds, path)).wv
     emb_dict = {}
