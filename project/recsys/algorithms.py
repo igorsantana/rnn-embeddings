@@ -114,7 +114,7 @@ def run_csm2vUK(users, songs, fold, topN, k, mat):
         for (n_s, session) in sessions:
             test_session    = test(session)
             c_pref          = mat.c_pref(n_s, train(session))
-            cos             = cosine_similarity(c_pref.reshape(1, -1), np.array(songs['sm2v'].values.tolist()))[0]
+            cos             = cosine_similarity(c_pref.reshape(1, -1), mat.sm2v_songs)[0]
             sum_v           = np.sum([songs_sim, cos], axis=0)
             top_n           = mat.get_n_largest(sum_v, topN)
             p               = m.Precision(top_n, test_session)

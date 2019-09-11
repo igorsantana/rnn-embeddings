@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
     emb.model_runner(conf['evaluation']['dataset'], conf['models'])
 
-    r.execute_cv(conf['evaluation'], conf['logfile'], conf['models']['is_doc'])
+    r.execute_cv(conf['evaluation'], conf['logfile'], conf['embeddings'])
 
     vals = {}
     cache = []
