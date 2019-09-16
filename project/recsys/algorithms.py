@@ -17,7 +17,7 @@ train       = lambda session: session[:len(session)//2]
 test        = lambda session: session[len(session)//2:]
 
 
-def run_m2vTN(users,songs, fold, topN, mat):
+def run_m2vTN(users,songs, fold, topN, mat, file):
     print('[Fold {}] Started to evaluate users for the m2vTN algorithm'.format(fold))
 
     test_users      = users[users['tt_{}'.format(fold)] == 'test'].index.tolist()
@@ -35,12 +35,12 @@ def run_m2vTN(users,songs, fold, topN, mat):
             metrics.append([p, r, fm])
         user_metrics.extend(metrics)
     means = np.mean(user_metrics, axis=0)
-    printlog('{:^10s}{:^10d}{:^10.5f}{:^10.5f}{:^10.5f}'.format('m2vTN',fold, means[0], means[1], means[2]))
+    print(format('{:^10s}{:^10d}{:^10.5f}{:^10.5f}{:^10.5f}'.format('m2vTN',fold, means[0], means[1], means[2])), file=open(file, 'a'))
     print('[Fold {}] Finished to evaluate users for the m2vTN algorithm'.format(fold))
     
 
 
-def run_sm2vTN(users,songs, fold, topN, mat):
+def run_sm2vTN(users,songs, fold, topN, mat, file):
     print('[Fold {}] Started to evaluate users for the sm2vTN algorithm'.format(fold))
     test_users      = users[users['tt_{}'.format(fold)] == 'test'].index.tolist()
     user_metrics    = []
@@ -59,11 +59,11 @@ def run_sm2vTN(users,songs, fold, topN, mat):
         user_metrics.extend(metrics)
 
     means = np.mean(user_metrics, axis=0)
-    printlog('{:^10s}{:^10d}{:^10.5f}{:^10.5f}{:^10.5f}'.format('sm2vTN',fold, means[0], means[1], means[2]))
+    print(format('{:^10s}{:^10d}{:^10.5f}{:^10.5f}{:^10.5f}'.format('sm2vTN',fold, means[0], means[1], means[2])), file=open(file, 'a'))
     print('[Fold {}] Finished to evaluate users for the sm2vTN algorithm'.format(fold))
     return means
 
-def run_csm2vTN(users,songs, fold, topN, mat):
+def run_csm2vTN(users,songs, fold, topN, mat, file):
     print('[Fold {}] Started to evaluate users for the csm2vTN algorithm'.format(fold))
     test_users      = users[users['tt_{}'.format(fold)] == 'test'].index.tolist()
     user_metrics    = []
@@ -84,12 +84,12 @@ def run_csm2vTN(users,songs, fold, topN, mat):
             metrics.append([p, r, fm])
         user_metrics.extend(metrics)
     means = np.mean(user_metrics, axis=0)
-    printlog('{:^10s}{:^10d}{:^10.5f}{:^10.5f}{:^10.5f}'.format('csm2vTN',fold, means[0], means[1], means[2]))
+    print(format('{:^10s}{:^10d}{:^10.5f}{:^10.5f}{:^10.5f}'.format('csm2vTN',fold, means[0], means[1], means[2])), file=open(file, 'a'))
     print('[Fold {}] Finished to evaluate users for the csm2vTN algorithm'.format(fold))
     return means
 
 
-def run_csm2vUK(users, songs, fold, topN, k, mat):
+def run_csm2vUK(users, songs, fold, topN, k, mat, file):
     print('[Fold {}] Started to evaluate users for the csm2vUK algorithm'.format(fold))
 
     matrix_u_songs  = mat.us_matrix()
@@ -123,17 +123,17 @@ def run_csm2vUK(users, songs, fold, topN, k, mat):
             metrics.append([p, r, fm])
         user_metrics.extend(metrics)
     means = np.mean(user_metrics, axis=0)
-    printlog('{:^10s}{:^10d}{:^10.5f}{:^10.5f}{:^10.5f}'.format('csm2vUK',fold, means[0], means[1], means[2]))
+    print(format('{:^10s}{:^10d}{:^10.5f}{:^10.5f}{:^10.5f}'.format('csm2vUK',fold, means[0], means[1], means[2])), file=open(file, 'a'))
     print('[Fold {}] Finished to evaluate users for the csm2vUK algorithm'.format(fold))
 
 
-def execute_algo(name, users, songs, fold, topN, k, m):
+def execute_algo(name, users, songs, fold, topN, k, m, file):
     if name == 'm2vTN':
-        return run_m2vTN(users, songs, fold, topN, m)
+        return run_m2vTN(users, songs, fold, topN, m, file)
     if name == 'sm2vTN':
-        return run_sm2vTN(users, songs, fold, topN, m)
+        return run_sm2vTN(users, songs, fold, topN, m, file)
     if name == 'csm2vTN':
-        return run_csm2vTN(users, songs, fold, topN, m)
+        return run_csm2vTN(users, songs, fold, topN, m, file)
     if name == 'csm2vUK':        
-        return run_csm2vUK(users,songs, fold, topN, k, m)
+        return run_csm2vUK(users,songs, fold, topN, k, m, file)
     return 0

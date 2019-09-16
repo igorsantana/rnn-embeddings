@@ -31,7 +31,7 @@ class Matrixes():
         history      = self.users[self.users.index == user]['history'].values.tolist()[0]
         flat_history = [song for n_s, session in history for song in session]
         unique_songs = list(set(flat_history))
-        flat_history = [self.songs.loc[song, 'm2v']e tiram  for song in flat_history]
+        flat_history = [self.songs.loc[song, 'm2v'] for song in flat_history]
         mean         = np.mean(flat_history, axis=0)
         return mean, unique_songs
 

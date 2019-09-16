@@ -13,18 +13,18 @@ from datetime                           import datetime
 
 
 
-def __execute_fold(users, songs, fold, topN, k, ds):
+def __execute_fold(users, songs, fold, topN, k, ds, file):
 	m               = Matrixes(users, songs, ds)
-	runner.execute_algo('m2vTN',   users, songs, fold, topN, k, m)
-	runner.execute_algo('sm2vTN',  users, songs, fold, topN, k, m)
-	runner.execute_algo('csm2vTN', users, songs, fold, topN, k, m)
-	runner.execute_algo('csm2vUK', users, songs, fold, topN, k, m)
+	runner.execute_algo('m2vTN',   users, songs, fold, topN, k, m, file)
+	runner.execute_algo('sm2vTN',  users, songs, fold, topN, k, m, file)
+	runner.execute_algo('csm2vTN', users, songs, fold, topN, k, m, file)
+	runner.execute_algo('csm2vUK', users, songs, fold, topN, k, m, file)
 	
 def execute_cv(conf, file, embeddings):    
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 	topN                    = int(conf['topN'])
 	k                       = int(conf['k'])
-	df                      = pd.read_csv('dataset/{}/sublistening_history_40.csv'.format(conf['dataset']))
+	df                      = pd.read_csv('dataset/{}/session_listening_history.csv'.format(conf['dataset']))
 	cv                      = int(conf['cross-validation'])
 	users, songs            = prep.split(df, cv, embeddings, conf['dataset'])
 	format 		    		= lambda str_ : '[' + str(datetime.now().strftime("%d/%m/%y %H:%M:%S")) + '] ' + str_
@@ -33,7 +33,7 @@ def execute_cv(conf, file, embeddings):
 	printlog('{:^10s}{:^10s}{:^10s}{:^10s}{:^10s}'.format('Algo','Fold','Prec','Rec', 'F1'))
 
 	for i in range(cv):
-			__execute_fold(users, songs, i, topN, k, conf['dataset'])
+			__execute_fold(users, songs, i, topN, k, conf['dataset'], file)
 	
 
 

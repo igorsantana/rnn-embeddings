@@ -39,7 +39,7 @@ def sessionize_user(df, session_time, s_path):
 
 
 def preprocess(dataset, t_session):
-    if os.path.exists('dataset/{}/sublistening_history_40.csv'.format(dataset)):
+    if os.path.exists('dataset/{}/session_listening_history.csv'.format(dataset)):
         printlog('The dataset {} is already sessionized, preprocessing is done.'.format(dataset))
         return
     print('Start to preprocess the dataset.')

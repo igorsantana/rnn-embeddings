@@ -7,15 +7,19 @@ import project.models.embeddings.models     as emb
 import project.evaluation.run               as r
 from datetime import datetime
 import re
-
+import argparse
 
 
 format 		= lambda str_ : '[' + str(datetime.now().strftime("%d/%m/%y %H:%M:%S")) + '] ' + str_
 printlog    = lambda x: print(format(x))
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Masters algorithms')
+    parser.add_argument('--config', help='Configuration file', type=str)
+    args = parser.parse_args()
+
     printlog('Starting the process, reading the configuration file.')
-    conf = yaml.safe_load(open('config.yml'))
+    conf = yaml.safe_load(open(args.config))
 
     pp.preprocess(conf['evaluation']['dataset'], conf['session']['interval'])
 
