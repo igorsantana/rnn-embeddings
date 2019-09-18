@@ -36,7 +36,7 @@ def get_embeddings(conf, ds, songs):
     if doc2vec['usage']:
         return __w2v_load(ds, doc2vec['path'], songs), __w2v_load(ds, 's' + doc2vec['path'], songs)
     if rnn['usage']:
-        return _rnn_load(ds, rnn['path'], songs), _rnn_load(ds, rnn['path'], songs)
+        return _rnn_load(ds, rnn['path'], songs), _rnn_load(ds, rnn['session_path'], songs)
     return {},{} 
 
 def split(df, cv, embeddings_conf, dataset):

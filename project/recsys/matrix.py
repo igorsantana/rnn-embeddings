@@ -29,6 +29,7 @@ class Matrixes():
 
     def u_pref(self,user):
         history      = self.users[self.users.index == user]['history'].values.tolist()[0]
+        history      = [(n, s[:len(s)//2]) for n, s in history]
         flat_history = [song for n_s, session in history for song in session]
         unique_songs = list(set(flat_history))
         flat_history = [self.songs.loc[song, 'm2v'] for song in flat_history]

@@ -8,29 +8,23 @@ models:
     vector_dim: 300
 session:
   interval: 60
-algorithms:
-  m2vTN: True
-  sm2vTN: True
-  csm2vTN: True
-  csm2vUK: True
 evaluation:
-  dataset: 'music2all'
+  dataset: 'xiami-small'
   cross-validation: 5
   k: 5
   topN: 5
-  metrics: ['precision', 'recall', 'hitrate', 'f1']
-logfile: 'output_music2all.log'
-num_parallel: 5
+logfile: 'outputs/output_xiami-small.log'
 embeddings:
-  glove: 
-    usage: False
-    path: 'm2v_glove'
   music2vec: 
     usage: True
     path: 'music2vec'
   doc2vec: 
     usage: False
     path: 'doc2vec'
+  glove: 
+    usage: False
+    path: 'm2v_glove'
   rnn: 
     usage: False
-    path: ''
+    path: 'embeddings1_listening-id#1.csv'
+    session_path: 'embeddings1_session-id#1.csv'
