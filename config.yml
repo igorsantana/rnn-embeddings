@@ -6,6 +6,24 @@ models:
     learning_rate: 0.025
     epochs: 5
     vector_dim: 300
+  doc2vec:
+    window_size: 5
+    negative_sample: 20
+    down_sample: 1e-3
+    learning_rate: 0.025
+    epochs: 5
+    vector_dim: 300
+  glove:
+    window_size: 5
+    vector_dim: 300
+    learning_rate: 0.025
+    epochs: 5
+  seq2seq:
+    vector_dim: 100
+    batch_size: 32
+    epochs: 50
+    model: 'GRU'
+    window_size: 5
 session:
   interval: 60
 evaluation:
@@ -14,17 +32,17 @@ evaluation:
   k: 5
   topN: 5
 logfile: 'outputs/output_xiami-small.log'
+embeddings-only: False
 embeddings:
   music2vec: 
-    usage: True
+    usage: False
     path: 'music2vec'
   doc2vec: 
     usage: False
     path: 'doc2vec'
   glove: 
     usage: False
-    path: 'm2v_glove'
-  rnn: 
-    usage: False
-    path: 'embeddings1_listening-id#1.csv'
-    session_path: 'embeddings1_session-id#1.csv'
+    path: 'glove'
+  seq2seq: 
+    usage: True
+    path: 'emb1.csv'
