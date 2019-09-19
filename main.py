@@ -7,9 +7,10 @@ import pandas                               as pd
 import numpy                                as np
 import multiprocessing                      as mp
 import project.evaluation.run               as r
-from    datetime                import datetime
-from    project.data.preprocess import preprocess
-from project.models.embeddings  import embeddings
+from    datetime                    import datetime
+from    project.data.preprocess     import preprocess
+from    project.models.embeddings   import embeddings
+from    project.evaluation.run      import cross_validation
 
 
 if __name__ == '__main__':
@@ -24,9 +25,14 @@ if __name__ == '__main__':
     logging.info('Project running in (%s) mode', 'recsys' if conf['embeddings-only'] else 'embeddings')
     logging.info('Pre-process started for dataset "%s"', conf['evaluation']['dataset'])
     preprocess(conf)
-    embeddings(conf)
+    methods = embeddings(conf)
+    
+    if conf['embeddings-only']:
+        logging.info('Our job here is done, embeddings generated in "tmp/%s" folder.', conf['evaluation']['dataset'])
+        exit()
 
-    # r.execute_cv(conf['evaluation'], conf['logfile'], conf['embeddings'])
+    cross_validation(conf, methods)
+
 
     # vals = {}
     # cache = []

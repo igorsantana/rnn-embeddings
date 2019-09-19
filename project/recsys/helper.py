@@ -4,22 +4,26 @@ import math
 from sklearn.metrics.pairwise               import cosine_similarity
 import warnings
 
-
-class Matrixes():
-    def __init__(self, users, songs, ds):
+class Helper():
+    def __init__(self, train, test, songs, ds):
         self.ds              = ds
-        self.users           = users
+        self.train           = train
+        self.test            = test
         self.songs           = songs
         self.m2v_songs       = self.songs.m2v.tolist() 
         self.sm2v_songs      = self.songs.sm2v.tolist()
         self.m2v_songs       = np.array(self.m2v_songs, dtype=np.float)
         self.sm2v_songs      = np.array(self.sm2v_songs, dtype=np.float)
         self.songs_ix        = { v:k for k,v in enumerate(songs.index) }
-        self.ix_users        = { v:k for k,v in enumerate(users.index) }
-        self.num_users       = len(users.index)
+        self.ix_users        = { v:k for k,v in enumerate(np.concatenate([train.index.values, test.index.values])) }
+        self.num_users       = len(self.ix_users)
         self.num_songs       = len(songs.index)
         self.ix_pref         = { v:self.u_pref(k)[0] for (k,v) in self.ix_users.items() }
         self.ix_u_songs      = { v:self.u_pref(k)[1] for (k,v) in self.ix_users.items() }
+
+    def user_sessions(self, user):
+        history = self.test.loc[user, 'history']
+        return [(s[:len(s)//2], s[len(s)//2:]) for s in history]
 
     def song_ix(self, song):
         return self.songs_ix[song]
@@ -28,15 +32,18 @@ class Matrixes():
         return self.ix_users[ix]
 
     def u_pref(self,user):
-        history      = self.users[self.users.index == user]['history'].values.tolist()[0]
-        history      = [(n, s[:len(s)//2]) for n, s in history]
-        flat_history = [song for n_s, session in history for song in session]
+        if user in self.train.index.values:
+            history = self.train[self.train.index == user]['history'].values[0]
+        if user in self.test.index.values:
+            history = self.test[self.test.index == user]['history'].values[0]
+            history = [s[:len(s)//2] for s in history]
+        flat_history = [song for session in history for song in session]
         unique_songs = list(set(flat_history))
         flat_history = [self.songs.loc[song, 'm2v'] for song in flat_history]
         mean         = np.mean(flat_history, axis=0)
         return mean, unique_songs
 
-    def c_pref(self, n_s, songs):
+    def c_pref(self, songs):
         flat_vecs       = self.songs.loc[songs, 'sm2v'].tolist()
         return np.mean(np.array(flat_vecs), axis=0)
             

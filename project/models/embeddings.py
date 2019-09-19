@@ -76,7 +76,7 @@ def embeddings(conf):
     methods     = [method[1] for method in methods if method[0]]
     df          = pd.read_csv('dataset/{}/session_listening_history.csv'.format(ds), sep = ',')
     logger      = logging.getLogger()
-    logging.info('Following methods will generate embeddings: %s', ', '.join(methods))
+    logging.info('Following methods have its embeddings: %s', ', '.join(methods))
     if not exists('tmp'):
         makedirs('tmp')
     if not exists('tmp/{}'.format(ds)):
@@ -102,6 +102,8 @@ def embeddings(conf):
         doc2vec(df, conf['models']['doc2vec']).save('tmp/{}/models/{}.model'.format(ds, d2v['path']))
         session_doc2vec(df, conf['models']['doc2vec']).save('tmp/{}/models/s{}.model'.format(ds, d2v['path']))
         logger.setLevel(logging.INFO)
-    if seq2seq['usage']:
+    if seq2seq['usage'] and not exists('tmp/{}/models/{}.csv'.format(ds, seq2seq['path'])):
         logging.info('RNN model will be generated at "%s" and "%s"', 'tmp/{}/models/{}.csv'.format(ds, seq2seq['path']), 'tmp/{}/models/s{}.csv'.format(ds, seq2seq['path']))
         rnn_start(df, conf)
+    
+    return methods

@@ -35,14 +35,14 @@ logfile: 'outputs/output_xiami-small.log'
 embeddings-only: False
 embeddings:
   music2vec: 
-    usage: False
+    usage: True
     path: 'music2vec'
   doc2vec: 
-    usage: False
+    usage: True
     path: 'doc2vec'
   glove: 
-    usage: False
+    usage: True
     path: 'glove'
   seq2seq: 
     usage: True
-    path: 'emb1.csv'
+    path: 'embeddings_seq2seq'
