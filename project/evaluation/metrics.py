@@ -1,11 +1,3 @@
-import pandas as pd
-def find_element_in_list(element, list_element):
-    try:
-        index_element = list_element.index(element)
-        return index_element
-    except ValueError:
-        return -1
-        
 def Precision(topn, test):
   num_intersect = len(set.intersection(set(topn), set(test)))
   num_rec       = len(topn)
@@ -13,7 +5,7 @@ def Precision(topn, test):
 
 def Recall(topn, test):
   num_intersect   = len(set.intersection(set(topn), set(test)))
-  num_test        = len(test)
+  num_test        = len(list(set(test)))
   return num_intersect / num_test
 
 def Hitrate(topn, test):

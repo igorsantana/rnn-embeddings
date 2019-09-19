@@ -6,8 +6,6 @@ models:
     learning_rate: 0.025
     epochs: 5
     vector_dim: 300
-  is_doc: False
-  is_glove: False
 session:
   interval: 60
 algorithms:
@@ -16,12 +14,12 @@ algorithms:
   csm2vTN: True
   csm2vUK: True
 evaluation:
-  dataset: 'xiami'
+  dataset: 'new'
   cross-validation: 5
   k: 5
   topN: 5
   metrics: ['precision', 'recall', 'hitrate', 'f1']
-logfile: 'exec_glove.log'
+logfile: 'output_new.log'
 num_parallel: 5
 embeddings:
   glove: 

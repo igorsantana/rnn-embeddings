@@ -24,18 +24,16 @@ def execute_cv(conf, file, embeddings):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 	topN                    = int(conf['topN'])
 	k                       = int(conf['k'])
-	# m2v, sm2v               = __load_models(conf['dataset'], is_doc)
-	# gm2v, gsm2v 			= __load_glove(conf['dataset'])
-	df                      = pd.read_csv('dataset/{}/session_listening_history_reduzido.csv'.format(conf['dataset']))
+	df                      = pd.read_csv('dataset/{}/session_listening_history.csv'.format(conf['dataset']))
 	cv                      = int(conf['cross-validation'])
 	users, songs            = prep.split(df, cv, embeddings, conf['dataset'])
-	# format 		    		= lambda str_ : '[' + str(datetime.now().strftime("%d/%m/%y %H:%M:%S")) + '] ' + str_
-	# printlog                = lambda x: print(format(x), file=open(file, 'a'))
+	format 		    		= lambda str_ : '[' + str(datetime.now().strftime("%d/%m/%y %H:%M:%S")) + '] ' + str_
+	printlog                = lambda x: print(format(x), file=open(file, 'a'))
 	
-	# printlog('{:^10s}{:^10s}{:^10s}{:^10s}{:^10s}'.format('Algo','Fold','Prec','Rec', 'F1'))
+	printlog('{:^10s}{:^10s}{:^10s}{:^10s}{:^10s}'.format('Algo','Fold','Prec','Rec', 'F1'))
 
-	# for i in range(cv):
-	# 		__execute_fold(users, songs, i, topN, k, conf['dataset'])
+	for i in range(cv):
+			__execute_fold(users, songs, i, topN, k, conf['dataset'])
 	
 
 

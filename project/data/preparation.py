@@ -24,15 +24,12 @@ def get_embeddings(conf, ds, songs):
         return __w2v_load(ds, music2vec['path'], songs), __w2v_load(ds, 's' + music2vec['path'], songs)
     if doc2vec['usage']:
         return __w2v_load(ds, doc2vec['path'], songs), __w2v_load(ds, 's' + doc2vec['path'], songs)
-    print(rnn)
-    return 1,1 
+    return {},{} 
 
 def split(df, cv, embeddings_conf, dataset):
-
     songs               = df['song'].unique()
     m2v, sm2v           = get_embeddings(embeddings_conf, dataset, songs)
-    # songs               = pd.DataFrame({ 'm2v': [m2v.wv[x] for x in songs], 'sm2v': [sm2v.wv[x] for x in songs],
-    #                                      'gm2v': [gm2v.word_vectors[gm2v.dictionary[x]] for x in songs], 'gsm2v': [gsm2v.word_vectors[gm2v.dictionary[x]] for x in songs] }, index=songs, columns=['m2v','sm2v', 'gm2v', 'gsm2v'])
+    songs               = pd.DataFrame({ 'm2v': [m2v[x] for x in songs], 'sm2v': [sm2v[x] for x in songs]},index=songs, columns=['m2v','sm2v'])
     sessions            = df.groupby('session')['song'].apply(lambda x: (x.name, x.tolist()))
     users               = df.groupby('user').agg(lambda x: list(x))
     users['history']    = users['session'].apply(lambda x: [sessions[session] for session in list(set(x))])
