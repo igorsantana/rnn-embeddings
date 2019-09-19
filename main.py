@@ -34,28 +34,4 @@ if __name__ == '__main__':
     cross_validation(conf, methods)
 
 
-    # vals = {}
-    # cache = []
-    # i = 0
-    # for line in reversed(list(open(conf['logfile']))):
-    #     l = line.rstrip()
-    #     if 'Algo' not in l: 
-    #         cache.append(l)
-    #     else:
-    #         vals[i] = cache
-    #         cache = []
-    #         i+=1
-    # regex = re.compile(".*?\[(.*?)\]")
-    # for key in vals.keys():
-    #     l = vals[key]
-    #     l = [re.sub(regex, '', x) for x in l]
-    #     l = [x.split(' ') for x in l if 'The' not in x]
-    #     l = [ [x for x in strings if x] for strings in l]
-    #     df = pd.DataFrame(l)
-    #     df.columns = ['algo', 'fold', 'rec', 'prec', 'f1']
-    #     df = df.astype({ 'fold': 'int32', 'rec': 'float32', 'prec': 'float32', 'f1': 'float32'})
-    #     print(df.groupby(by='algo').mean().drop(columns='fold'))
-    
-
-
 

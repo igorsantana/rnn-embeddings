@@ -18,7 +18,6 @@ def execute_algo(train, test, songs, fold, topN, k_sim, data):
     u_songs  = data.us_matrix()
     users    = data.uu_matrix()
 
-
     def pref(u, k_similar, song):
         listened_to = [(k, u_songs[k, data.song_ix(song)] == 1) for k in k_similar]
         sum_sims = 0

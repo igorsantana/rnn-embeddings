@@ -7,6 +7,7 @@
         "**/CVS": true,
         "**/.DS_Store": true,
         "**/*.pyc": {"when": "$(basename).py"}, 
-        "**/__pycache__": true
+        "**/__pycache__": true,
+        "**/__init__.py": true
     }
 }

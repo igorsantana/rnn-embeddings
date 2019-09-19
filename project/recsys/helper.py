@@ -18,8 +18,8 @@ class Helper():
         self.ix_users        = { v:k for k,v in enumerate(np.concatenate([train.index.values, test.index.values])) }
         self.num_users       = len(self.ix_users)
         self.num_songs       = len(songs.index)
-        self.ix_pref         = { v:self.u_pref(k)[0] for (k,v) in self.ix_users.items() }
-        self.ix_u_songs      = { v:self.u_pref(k)[1] for (k,v) in self.ix_users.items() }
+        self.ix_pref         = { v:self.u_pref(k) for (k,v) in self.ix_users.items() }
+        self.ix_u_songs      = { v:self.unique_songs(k) for (k,v) in self.ix_users.items() }
 
     def user_sessions(self, user):
         history = self.test.loc[user, 'history']
@@ -31,6 +31,15 @@ class Helper():
     def ix_user(self, ix):
         return self.ix_users[ix]
 
+    def unique_songs(self, user):
+        if user in self.train.index.values:
+            history = self.train[self.train.index == user]['history'].values[0]
+        if user in self.test.index.values:
+            history = self.test[self.test.index == user]['history'].values[0]
+        flat_history = [song for session in history for song in session]
+        unique_songs = list(set(flat_history))
+        return unique_songs
+
     def u_pref(self,user):
         if user in self.train.index.values:
             history = self.train[self.train.index == user]['history'].values[0]
@@ -38,10 +47,9 @@ class Helper():
             history = self.test[self.test.index == user]['history'].values[0]
             history = [s[:len(s)//2] for s in history]
         flat_history = [song for session in history for song in session]
-        unique_songs = list(set(flat_history))
         flat_history = [self.songs.loc[song, 'm2v'] for song in flat_history]
         mean         = np.mean(flat_history, axis=0)
-        return mean, unique_songs
+        return mean
 
     def c_pref(self, songs):
         flat_vecs       = self.songs.loc[songs, 'sm2v'].tolist()
@@ -78,8 +86,7 @@ class Helper():
         for u in range(self.num_users):
             songs_ids = [self.songs_ix[s] for s in self.ix_u_songs[u]]
             y_array = np.zeros(self.num_songs)
-            for s in songs_ids:
-                y_array[s] = 1
+            y_array[songs_ids] = 1
             matrix_u_songs[u] = y_array
         np.save('tmp/{}/matrix_user_songs'.format(self.ds), matrix_u_songs)
         return matrix_u_songs

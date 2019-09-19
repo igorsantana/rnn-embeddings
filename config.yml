@@ -27,22 +27,22 @@ models:
 session:
   interval: 60
 evaluation:
-  dataset: 'xiami-small'
+  dataset: 'xiami'
   cross-validation: 5
   k: 5
   topN: 5
-logfile: 'outputs/output_xiami-small.log'
+logfile: 'outputs/output_xiami.log'
 embeddings-only: False
 embeddings:
   music2vec: 
     usage: True
     path: 'music2vec'
   doc2vec: 
-    usage: True
+    usage: False
     path: 'doc2vec'
   glove: 
-    usage: True
+    usage: False
     path: 'glove'
   seq2seq: 
-    usage: True
+    usage: False
     path: 'embeddings_seq2seq'
