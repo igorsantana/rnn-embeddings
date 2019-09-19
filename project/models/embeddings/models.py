@@ -35,6 +35,7 @@ def music2vec(data, p):
 def session_music2vec(data, p):
     printlog('Prepping data')
     sequence = data_prep('session', data)
+    print(sequence)
     return Word2Vec(sequence, size=p['vector_dim'],
                     alpha=float(p['learning_rate']), window=int(p['window_size']),
                     sample=float(p['down_sample']), sg=1, hs=0, negative=int(p['negative_sample']),
@@ -78,7 +79,7 @@ def model_runner(dataset, params, embeddings):
     sm2v    =  os.path.isfile('tmp/{}/models/{}.model'.format(dataset, 's' + embeddings['music2vec']['path'])) 
     gm2v    =  os.path.isfile('tmp/{}/models/{}.model'.format(dataset, embeddings['glove']['path'])) 
     gsm2v   =  os.path.isfile('tmp/{}/models/{}.model'.format(dataset, 's' + embeddings['glove']['path'])) 
-    df = pd.read_csv('dataset/{}/session_listening_history.csv'.format(dataset), sep = ',')
+    df = pd.read_csv('dataset/{}/session_listening_history_reduzido.csv'.format(dataset), sep = ',')
 
     if embeddings['glove']['usage']:
         if (not gm2v) or (not gsm2v):

@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
-from gensim.models                      import Word2Vec, Doc2Vec
-from glove 		
+from gensim.models  import Word2Vec, Doc2Vec
+from glove 	import Glove, Corpus	
 def __w2v_load(ds, path, songs):
     wv = Word2Vec.load('tmp/{}/models/{}.model'.format(ds, path)).wv
     emb_dict = {}

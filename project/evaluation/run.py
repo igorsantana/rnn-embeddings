@@ -24,7 +24,7 @@ def execute_cv(conf, file, embeddings):
 	logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 	topN                    = int(conf['topN'])
 	k                       = int(conf['k'])
-	df                      = pd.read_csv('dataset/{}/session_listening_history.csv'.format(conf['dataset']))
+	df                      = pd.read_csv('dataset/{}/session_listening_history_reduzido.csv'.format(conf['dataset']))
 	cv                      = int(conf['cross-validation'])
 	users, songs            = prep.split(df, cv, embeddings, conf['dataset'])
 	format 		    		= lambda str_ : '[' + str(datetime.now().strftime("%d/%m/%y %H:%M:%S")) + '] ' + str_
