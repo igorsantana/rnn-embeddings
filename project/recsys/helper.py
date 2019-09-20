@@ -2,22 +2,28 @@ import os
 import numpy as np
 import math
 from sklearn.metrics.pairwise               import cosine_similarity
+import warnings
 
-class Matrixes():
-    def __init__(self, users, songs, ds):
+class Helper():
+    def __init__(self, train, test, songs, ds):
         self.ds              = ds
-        self.users           = users
+        self.train           = train
+        self.test            = test
         self.songs           = songs
         self.m2v_songs       = self.songs.m2v.tolist() 
         self.sm2v_songs      = self.songs.sm2v.tolist()
         self.m2v_songs       = np.array(self.m2v_songs, dtype=np.float)
         self.sm2v_songs      = np.array(self.sm2v_songs, dtype=np.float)
-        self.songs_ix        = { v:k for k,v in enumerate(songs.index) }
-        self.ix_users        = { v:k for k,v in enumerate(users.index) }
-        self.num_users       = len(users.index)
+        self.songs_ix        = { v:k for k,v in enumerate(songs.index, 0) }
+        self.ix_users        = { v:k for k,v in enumerate(np.concatenate([train.index.values, test.index.values]).tolist(), 0)   }
+        self.num_users       = len(self.ix_users)
         self.num_songs       = len(songs.index)
-        self.ix_pref         = { v:self.u_pref(k)[0] for (k,v) in self.ix_users.items() }
-        self.ix_u_songs      = { v:self.u_pref(k)[1] for (k,v) in self.ix_users.items() }
+        self.ix_pref         = { v:self.u_pref(k) for (k,v) in self.ix_users.items() }
+        self.ix_u_songs      = { v:self.unique_songs(k) for (k,v) in self.ix_users.items() }
+
+    def user_sessions(self, user):
+        history = self.test.loc[user, 'history']
+        return [(s[:len(s)//2], s[len(s)//2:]) for s in history]
 
     def song_ix(self, song):
         return self.songs_ix[song]
@@ -25,14 +31,27 @@ class Matrixes():
     def ix_user(self, ix):
         return self.ix_users[ix]
 
-    def u_pref(self,user):
-        history      = self.users[self.users.index == user]['history'].values.tolist()[0]
-        flat_history = [song for n_s, session in history for song in session[:len(session)//2]]
+    def unique_songs(self, user):
+        if user in self.train.index.values:
+            history = self.train[self.train.index == user]['history'].values[0]
+        if user in self.test.index.values:
+            history = self.test[self.test.index == user]['history'].values[0]
+        flat_history = [song for session in history for song in session]
         unique_songs = list(set(flat_history))
-        flat_history = [self.songs.loc[song, 'm2v'] for song in flat_history]
-        return np.mean(flat_history, axis=0), unique_songs
+        return unique_songs
 
-    def c_pref(self, n_s, songs):
+    def u_pref(self,user):
+        if user in self.train.index.values:
+            history = self.train[self.train.index == user]['history'].values[0]
+        if user in self.test.index.values:
+            history = self.test[self.test.index == user]['history'].values[0]
+            history = [s[:len(s)//2] for s in history]
+        flat_history = [song for session in history for song in session]
+        flat_history = [self.songs.loc[song, 'm2v'] for song in flat_history]
+        mean         = np.mean(flat_history, axis=0)
+        return mean
+
+    def c_pref(self, songs):
         flat_vecs       = self.songs.loc[songs, 'sm2v'].tolist()
         return np.mean(np.array(flat_vecs), axis=0)
             
@@ -63,12 +82,11 @@ class Matrixes():
             return np.load('tmp/{}/matrix_user_songs.npy'.format(self.ds))
         
         matrix_u_songs  = np.zeros((self.num_users, self.num_songs))
-
-        for u in range(self.num_users):
-            songs_ids = [self.songs_ix[s] for s in self.ix_u_songs[u]]
+        for u in list(self.ix_u_songs.keys()):
+            songs = self.ix_u_songs[u]
+            songs_ids = [self.songs_ix[s] for s in songs]
             y_array = np.zeros(self.num_songs)
-            for s in songs_ids:
-                y_array[s] = 1
+            y_array[songs_ids] = 1
             matrix_u_songs[u] = y_array
         np.save('tmp/{}/matrix_user_songs'.format(self.ds), matrix_u_songs)
         return matrix_u_songs

@@ -1,36 +1,48 @@
 models:
   music2vec:
-    window_size: 5
-    negative_sample: 20
-    down_sample: 1e-3
-    learning_rate: 0.025
-    epochs: 5
-    vector_dim: 300
+    window_size: [5, 10]
+    negative_sample: [10, 20, 30, 40, 50]
+    down_sample: [1e-3]
+    learning_rate: [0.025, 0.020]
+    epochs: [5, 10, 15]
+    vector_dim: [100, 200, 300]
+  doc2vec:
+    window_size: [5, 10]
+    negative_sample: [10, 20, 30, 40, 50]
+    down_sample: [1e-3]
+    learning_rate: [0.025, 0.020]
+    epochs: [5, 10, 15]
+    vector_dim: [100, 200, 300]
+  glove:
+    window_size: [3, 5, 10]
+    vector_dim: [50, 100, 150, 200]
+    learning_rate: [0.010, 0.015, 0.020, 0.025]
+    epochs: [5, 10, 15]
+  seq2seq:
+    vector_dim: [64, 128, 256]
+    batch_size: [32, 64, 128]
+    epochs: [50]
+    model: ['GRU', 'RNN', 'LSTM']
+    window_size: [5, 10]
 session:
   interval: 60
-algorithms:
-  m2vTN: True
-  sm2vTN: True
-  csm2vTN: True
-  csm2vUK: True
 evaluation:
-  dataset: 'new'
+  dataset: 'xiami-small'
   cross-validation: 5
   k: 5
   topN: 5
-  metrics: ['precision', 'recall', 'hitrate', 'f1']
-logfile: 'output_new.log'
-num_parallel: 5
+logfile: 'outputs/output-xiami-small.log'
+embeddings-opt: True
 embeddings:
-  glove: 
-    usage: False
-    path: 'm2v_glove'
   music2vec: 
     usage: True
     path: 'music2vec'
   doc2vec: 
-    usage: False
+    usage: True
     path: 'doc2vec'
-  rnn: 
-    usage: False
-    path: ''
+  glove: 
+    usage: True
+    path: 'glove'
+  seq2seq: 
+    usage: True
+    path: 'embeddings_seq2seq'

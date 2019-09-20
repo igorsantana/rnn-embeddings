@@ -1,4 +1,4 @@
-import os
+from os import path
 import csv
 import math
 import json
@@ -9,15 +9,8 @@ import pandas   as pd
 import multiprocessing as mp
 from datetime import datetime, timedelta
 
-conf        = yaml.safe_load(open('config.yml'))
-fmt_t       = lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M')
-format 		= lambda str_ : '[' + str(datetime.now().strftime("%d/%m/%y %H:%M:%S")) + '] ' + str_
-printlog    = lambda x: print(format(x), file=open(conf['logfile'], 'a'))
-
-def percentage(part, whole):
-  return 100 * float(part)/float(whole)
-
-def sessionize_user(df, session_time, s_path):
+def sessionize_user(ds, session_time, s_path):
+    df              = pd.read_csv('dataset/{}/listening_history.csv'.format(ds), sep = ',')
     df['timestamp'] = df['timestamp'].astype('datetime64')
     df['dif']       = df.timestamp.diff()
     df['session']   = df.apply(lambda x: 'NEW_SESSION' if x.dif >= timedelta(minutes=session_time) else 'SAME_SESSION', axis=1)
@@ -25,7 +18,7 @@ def sessionize_user(df, session_time, s_path):
     l_u  = ''
     f = open(s_path, 'w+')
     print(','.join(['user', 'song', 'timestamp', 'session']), file=f)
-    print('Criando sessões no arquivo {}'.format(s_path))
+    logging.info('Sessionized "%s" data file: %s', ds, s_path)
     for row in df.values:
         if s_no == 0:
             l_u = row[0]
@@ -36,16 +29,39 @@ def sessionize_user(df, session_time, s_path):
         row[2] = str(row[2])
         print(','.join(row[:-1]), file=f)
     
+def window_sequences(sequences, window_size):
+    w_seq = []
+    for seq in sequences:
+        seq = seq.split(' ')
+        if len(seq) == window_size:
+            w_seq.append(seq)
+        if len(seq) > window_size:
+            for i in range(0, (len(seq) - window_size) + 1):
+                w_seq.append(seq[i:i+window_size])
+        if len(seq) < window_size:
+            seq += ['-'] * (window_size - len(seq))
+            w_seq.append(seq)
+    return [' '.join(seq) for seq in w_seq]
 
+def gen_seq_files(df, pwd):
+    contextual_sessions = df.groupby('session')['song'].agg(list).values
+    user_sessions       = df.groupby('user')['song'].agg(list).values
+    fc = open(pwd + 'contextual_seqs.txt', 'w+')
+    fu = open(pwd + 'listening_seqs.txt', 'w+')
+    for session in contextual_sessions:
+        fc.write(' '.join(session) + '\n')
+    fc.close()
+    for listening in user_sessions:
+        fu.write(' '.join(listening) + '\n')
+    fu.close()
 
-def preprocess(dataset, t_session):
-    if os.path.exists('dataset/{}/session_listening_history_reduzido.csv'.format(dataset)):
-        printlog('The dataset {} is already sessionized, preprocessing is done.'.format(dataset))
+def preprocess(conf):
+    ds       = conf['evaluation']['dataset']
+    interval = conf['session']['interval']
+    if path.exists('dataset/{}/session_listening_history.csv'.format(ds)):
+        logging.info('The "%s" dataset is already sessionized', ds)
         return
-    print('Start to preprocess the dataset.')
-    df		= pd.read_csv('dataset/{}/listening_history.csv'.format(dataset), sep = ',')
-    logging.info(format('Starting to generate the sessionized dataset'))
-    sessionize_user(df, t_session, 'dataset/{}/session_listening_history_reduzido.csv'.format(dataset))
-    logging.info(format('Done sessionizing the dataset.'))
+    logging.info('Started to sessionize dataset "%s"', ds)
+    sessionize_user(ds, interval, 'dataset/{}/session_listening_history.csv'.format(ds))
     
 
