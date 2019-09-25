@@ -56,7 +56,6 @@ def get_embeddings_opt(method, ds, path, songs):
 
 def prepare_data(df, conf):
     ds                  = conf['evaluation']['dataset']
-
     path_kfold          = 'tmp/{}/kfold/'.format(ds)
     if exists(path_kfold):
         kfold = []

@@ -26,10 +26,18 @@ if __name__ == '__main__':
     logging.info('Pre-process started for dataset "%s"', conf['evaluation']['dataset'])
     preprocess(conf)
 
-    if conf['embeddings-opt']:
-        methods = embeddings_opt(conf)
-    else:
-        methods = embeddings(conf)
+
+
+    f = open('tmp/xiami-small/id_emb.csv', 'r')
+    methods = f.read()
+    f.close()
+    methods = '[{}]'.format(methods.replace('"', ''))
+    methods = eval(methods)
+    methods = dict(methods)
+    # if conf['embeddings-opt']:
+    #     methods = embeddings_opt(conf)
+    # else:
+    #     methods = embeddings(conf)
 
     cross_validation(conf, methods)
 
