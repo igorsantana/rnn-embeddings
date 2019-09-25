@@ -8,22 +8,37 @@ from keras.callbacks                import EarlyStopping
 from keras.layers                   import Dense, CuDNNLSTM, CuDNNGRU, Embedding, Input, SimpleRNN
 
 def read_input_targets(path, win_size, t):
+    d = {}
     if t == 'session':
-        f    = open(path + 'contextual_seqs.txt')
+        f    = open(path + 'c_seqs.csv')
         s_i = []
-        for line in f: s_i.append(line.rstrip('\n'))
+        for line in f: 
+            l = line.rstrip('\n').split('\t')
+            x = ' '.join(l[1].replace('[', '').replace(']', '').split(','))
+            s_i.append(x)
+            if l[0] in d:
+                d[l[0]].append(x)
+            else: 
+                d[l[0]] = [x]
         f.close()
         s_i      = window_sequences(s_i, win_size)
         s_t      = ['START_ ' + session + ' _END' for session in s_i]
-        return s_i, s_t
+        return s_i, s_t, d
     if t == 'listening':
-        f    = open(path + 'listening_seqs.txt')
+        f    = open(path + 'u_seqs.csv')
         s_i = []
-        for line in f: s_i.append(line.rstrip('\n'))
+        for line in f: 
+            l = line.rstrip('\n').split('\t')
+            x = ' '.join(l[1].replace('[', '').replace(']', '').split(','))
+            s_i.append(x)
+            if l[0] in d:
+                d[l[0]].append(x)
+            else: 
+                d[l[0]] = [x]
         f.close()
         s_i = window_sequences(s_i, win_size)
         s_t = ['START_ ' + session + ' _END' for session in s_i]
-        return s_i, s_t
+        return s_i, s_t, d
 
 def get_unique_songs(s_i, s_t):
     all_i   = set()
@@ -113,58 +128,72 @@ def __run_s2s(sessions_i, sessions_t, num_songs, song_ix, max_l, NUM_DIM=128, BA
     model               = Model([ENCODER_INPUT, DECODER_INPUT], DECODER_OUTPUT)
     model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['acc'])
     model.summary()
-
-    history = model.fit_generator(generator= generate_batch(X_train, y_train, batch_size= BATCH_SIZE),
+    model.fit_generator(generator= generate_batch(X_train, y_train, batch_size= BATCH_SIZE),
                         steps_per_epoch= TRAIN_SAMPLES // BATCH_SIZE,
                         epochs=EPOCHS,
                         validation_data= generate_batch(X_test, y_test, batch_size= BATCH_SIZE),
                         validation_steps= VAL_SAMPLES // BATCH_SIZE, callbacks=[es])
-    return model
+
+
+    return Model(ENCODER_INPUT, ENCODER_STATE), generate_batch
 
 def start(df, conf, id, ds):
     s2s = conf
-    if not exists('dataset/{}/listening_seqs.txt'.format(ds)):
-        logging.info('Files %s and %s are going to be at "%s"', 'listening_seqs.txt', 'contextual_seqs.txt', 'dataset/{}/'.format(ds))
+    if not exists('dataset/{}/u_seqs.csv'.format(ds)):
+        logging.info('Files %s and %s are going to be at "%s"', 'u_seqs.csv', 'c_seqs.csv', 'dataset/{}/'.format(ds))
         gen_seq_files(df, 'dataset/{}/'.format(ds))
     del df
     logging.info('Reading the input data from the RNN')
-    sessions_i,     sessions_t                  = read_input_targets('dataset/{}/'.format(ds), s2s['window_size'], 'session')
-    listening_i,    listening_t                 = read_input_targets('dataset/{}/'.format(ds), s2s['window_size'], 'listening')
-    input_songs,    target_songs                = get_unique_songs(sessions_i, sessions_t)
-    max_length_i,   max_length_t                = get_max_length(sessions_i, sessions_t)
+
+
+    sessions_i, sessions_t, song_seqs_ses       = read_input_targets('dataset/{}/'.format(ds), s2s['window_size'], 'session')
+    listening_i,listening_t, song_seqs_list     = read_input_targets('dataset/{}/'.format(ds), s2s['window_size'], 'listening')
+    input_songs,    target_songs                = get_unique_songs(listening_i, listening_t)
+    max_length_i,   max_length_t                = get_max_length(listening_i, listening_t)
     num_encoder_songs, num_decoder_songs        = len(input_songs) + 1, len(target_songs) + 1
     song_ix_i, song_ix_t, ix_song_i, ix_song_t  = get_dicts(input_songs, target_songs)
 
-    model = __run_s2s(listening_i, listening_t, (num_encoder_songs, num_decoder_songs), (song_ix_i, song_ix_t), 
+    
+
+    model, gen = __run_s2s(listening_i, listening_t, (num_encoder_songs, num_decoder_songs), (song_ix_i, song_ix_t), 
           (max_length_i, max_length_t), NUM_DIM=s2s['vector_dim'], BATCH_SIZE=s2s['batch_size'], EPOCHS=s2s['epochs'],
            MODEL=s2s['model'], WINDOW_SIZE=s2s['window_size'])
 
-    # embeddings = model.layers[2].get_weights()[0]
-
-    # f = open('tmp/{}/models/emb1.csv'.format(ds), 'w')
-    # for song in input_songs:
-    #     if song != '-': print('{};{}'.format(song, embeddings[song_ix_i[song]].tolist()), file=f)
-    # f.close()
-
-    embeddings2 = model.layers[3].get_weights()[0]
     f = open('tmp/{}/models/{}.csv'.format(ds, 'embeddings_seq2seq' if not id else 'seq2seq_' + str(id)), 'w')
-    for song in input_songs:
-        if song != '-': print('{};{}'.format(song, embeddings2[song_ix_i[song]].tolist()), file=f)
+    for key in song_seqs_list.keys():
+        seqs = song_seqs_list[key]
+        get_seq = gen(seqs, ['START_ ' + seq + ' _END' for seq in seqs], batch_size=1)
+        seq_embeddings = []
+        i=0
+        for (input_seq, _), _ in get_seq:
+            if i == len(seqs):
+                break
+            states = model.predict(input_seq)
+            seq_embeddings.append(states)
+            i+=1
+        emb_final = np.mean(np.array(seq_embeddings), 0)[0]
+        print('{};{}'.format(key, emb_final.tolist()), file=f)
     f.close()
 
-    model = __run_s2s(sessions_i, sessions_t, (num_encoder_songs, num_decoder_songs), (song_ix_i, song_ix_t), 
+    ######################################################################################################################
+
+    model, gen = __run_s2s(sessions_i, sessions_t, (num_encoder_songs, num_decoder_songs), (song_ix_i, song_ix_t), 
           (max_length_i, max_length_t), NUM_DIM=s2s['vector_dim'], BATCH_SIZE=s2s['batch_size'], EPOCHS=s2s['epochs'],
            MODEL=s2s['model'], WINDOW_SIZE=s2s['window_size'])
 
-    # embeddings = model.layers[2].get_weights()[0]
-    
-    # f = open('tmp/{}/models/semb1.csv'.format(ds), 'w')
-    # for song in input_songs:
-    #     if song != '-': print('{};{}'.format(song, embeddings[song_ix_i[song]].tolist()), file=f)
-    # f.close()
-
-    embeddings2 = model.layers[3].get_weights()[0]
     f = open('tmp/{}/models/{}.csv'.format(ds, 'sembeddings_seq2seq' if not id else 'sseq2seq_' + str(id)), 'w')
-    for song in input_songs:
-        if song != '-': print('{};{}'.format(song, embeddings2[song_ix_i[song]].tolist()), file=f)
+
+    for key in song_seqs_ses.keys():
+        seqs = song_seqs_ses[key]
+        get_seq = gen(seqs, ['START_ ' + seq + ' _END' for seq in seqs], batch_size=1)
+        seq_embeddings = []
+        i=0
+        for (input_seq, _), _ in get_seq:
+            if i == len(seqs):
+                break
+            states = model.predict(input_seq)
+            seq_embeddings.append(states)
+            i+=1
+        emb_final = np.mean(np.array(seq_embeddings), 0)[0]
+        print('{};{}'.format(key, emb_final.tolist()), file=f)
     f.close()

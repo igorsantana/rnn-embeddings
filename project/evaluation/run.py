@@ -59,11 +59,6 @@ def cross_validation(conf, methods):
 	kfold	= prepare_data(df, conf)
 	
 	if conf['embeddings-opt']:
-		# f = open('tmp/{}/id_emb.csv'.format(params['dataset']), 'w+')
-		# w = csv.writer(f)
-		# w.writerow(methods.items())
-		# f.close()
-
 		f = open('tmp/{}/results.csv'.format(params['dataset']), 'w+')
 		w = csv.writer(f)
 		for id in methods.keys():
