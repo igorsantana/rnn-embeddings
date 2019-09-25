@@ -44,5 +44,5 @@ embeddings:
     usage: True
     path: 'glove'
   seq2seq: 
-    usage: True
+    usage: False
     path: 'embeddings_seq2seq'

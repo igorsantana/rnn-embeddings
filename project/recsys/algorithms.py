@@ -34,20 +34,21 @@ def execute_algo(train, test, songs, fold, topN, k_sim, data):
         song_sim = np.array([pref(data.ix_user(user), sim_ix, s) for s in songs.index.values])
 
         for (train_songs, test_songs) in sessions:
-            c_pref  = data.c_pref(train_songs)
+            if len(train_songs) > 0:
+                c_pref  = data.c_pref(train_songs)
 
-            con_cos = cosine_similarity(c_pref.reshape(1, -1), data.sm2v_songs)[0]
+                con_cos = cosine_similarity(c_pref.reshape(1, -1), data.sm2v_songs)[0]
 
-            f_cos   = np.sum([user_cos, con_cos], axis=0)
-            UK_cos  = np.sum([song_sim, con_cos], axis=0)
-            cos_tn  = data.get_n_largest(con_cos, topN)
-            both_tn = data.get_n_largest(f_cos, topN)
-            uk_tn   = data.get_n_largest(UK_cos, topN)
+                f_cos   = np.sum([user_cos, con_cos], axis=0)
+                UK_cos  = np.sum([song_sim, con_cos], axis=0)
+                cos_tn  = data.get_n_largest(con_cos, topN)
+                both_tn = data.get_n_largest(f_cos, topN)
+                uk_tn   = data.get_n_largest(UK_cos, topN)
 
-            m2vTN.append(get_metrics(user_tn, test_songs))
-            sm2vTN.append(get_metrics(cos_tn, test_songs))
-            csm2vTN.append(get_metrics(both_tn, test_songs))
-            csm2vUK.append(get_metrics(uk_tn, test_songs))
+                m2vTN.append(get_metrics(user_tn, test_songs))
+                sm2vTN.append(get_metrics(cos_tn, test_songs))
+                csm2vTN.append(get_metrics(both_tn, test_songs))
+                csm2vUK.append(get_metrics(uk_tn, test_songs))
 
     m_m2vTN     = np.mean(m2vTN, axis=0).tolist()
     m_sm2vTN    = np.mean(sm2vTN, axis=0).tolist()

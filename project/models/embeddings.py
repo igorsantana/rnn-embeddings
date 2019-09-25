@@ -141,7 +141,7 @@ def embeddings_opt(conf):
                         for model in s2s['model']:
                             __conf = {'window_size': window, 'vector_dim': dim, 'batch_size': batch,
                                     'epochs':epoch, 'model': model}
-                            rnn_start(df, __conf, id)
+                            rnn_start(df, __conf, id, ds)
                             ids_configurations['seq2seq_' + str(id)] = 'window={};dim={};bs={};epochs={};model={}'.format(window, dim, batch, epoch, model)
                             id+=1
     return ids_configurations
