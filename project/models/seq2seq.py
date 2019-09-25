@@ -121,9 +121,8 @@ def __run_s2s(sessions_i, sessions_t, num_songs, song_ix, max_l, NUM_DIM=128, BA
                         validation_steps= VAL_SAMPLES // BATCH_SIZE, callbacks=[es])
     return model
 
-def start(df, conf, id):
-    s2s = conf['models']['seq2seq']
-    ds  = conf['evaluation']['dataset']
+def start(df, conf, id, ds):
+    s2s = conf
     if not exists('dataset/{}/listening_seqs.txt'.format(ds)):
         logging.info('Files %s and %s are going to be at "%s"', 'listening_seqs.txt', 'contextual_seqs.txt', 'dataset/{}/'.format(ds))
         gen_seq_files(df, 'dataset/{}/'.format(ds))
