@@ -184,6 +184,6 @@ def embeddings(conf):
         logger.setLevel(logging.INFO)
     if seq2seq['usage'] and not exists('tmp/{}/models/{}.csv'.format(ds, seq2seq['path'])):
         logging.info('RNN model will be generated at "%s" and "%s"', 'tmp/{}/models/{}.csv'.format(ds, seq2seq['path']), 'tmp/{}/models/s{}.csv'.format(ds, seq2seq['path']))
-        rnn_start(df, conf, None)
+        rnn_start(df, conf, None, ds)
     
     return methods
