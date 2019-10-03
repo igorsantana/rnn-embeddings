@@ -123,7 +123,7 @@ def __run_s2s(sessions_i, sessions_t, num_songs, song_ix, max_l, NUM_DIM=128, BA
     DENSE_DECODER       = Dense(num_decoder_songs, activation='softmax')
     DECODER_OUTPUT      = DENSE_DECODER(DECODER_OUTPUT)
 
-    es = EarlyStopping(monitor='val_acc', mode='max', verbose=1, patience=2)
+    es = EarlyStopping(monitor='val_acc', mode='max', verbose=1, patience=5)
 
     model               = Model([ENCODER_INPUT, DECODER_INPUT], DECODER_OUTPUT)
     model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['acc'])
@@ -141,7 +141,7 @@ def start(df, conf, id, ds):
     s2s = conf
     if not exists('dataset/{}/u_seqs.csv'.format(ds)):
         logging.info('Files %s and %s are going to be at "%s"', 'u_seqs.csv', 'c_seqs.csv', 'dataset/{}/'.format(ds))
-        gen_seq_files(df, 'dataset/{}/'.format(ds))
+        gen_seq_files(df, 'dataset/{}/'.format(ds), conf['window_size'])
     del df
     logging.info('Reading the input data from the RNN')
 
@@ -153,26 +153,25 @@ def start(df, conf, id, ds):
     num_encoder_songs, num_decoder_songs        = len(input_songs) + 1, len(target_songs) + 1
     song_ix_i, song_ix_t, ix_song_i, ix_song_t  = get_dicts(input_songs, target_songs)
 
-    
-
     model, gen = __run_s2s(listening_i, listening_t, (num_encoder_songs, num_decoder_songs), (song_ix_i, song_ix_t), 
           (max_length_i, max_length_t), NUM_DIM=s2s['vector_dim'], BATCH_SIZE=s2s['batch_size'], EPOCHS=s2s['epochs'],
            MODEL=s2s['model'], WINDOW_SIZE=s2s['window_size'])
 
-    f = open('tmp/{}/models/{}.csv'.format(ds, 'embeddings_seq2seq' if not id else 'seq2seq_' + str(id)), 'w')
+    f = open('tmp/{}/models/{}.csv'.format(ds, id), 'w')
     for key in song_seqs_list.keys():
-        seqs = song_seqs_list[key]
-        get_seq = gen(seqs, ['START_ ' + seq + ' _END' for seq in seqs], batch_size=1)
-        seq_embeddings = []
-        i=0
-        for (input_seq, _), _ in get_seq:
-            if i == len(seqs):
-                break
-            states = model.predict(input_seq)
-            seq_embeddings.append(states)
-            i+=1
-        emb_final = np.mean(np.array(seq_embeddings), 0)[0]
-        print('{};{}'.format(key, emb_final.tolist()), file=f)
+        if key != '-':
+            seqs = song_seqs_list[key]
+            get_seq = gen(seqs, ['START_ ' + seq + ' _END' for seq in seqs], batch_size=1)
+            seq_embeddings = []
+            i=0
+            for (input_seq, _), _ in get_seq:
+                if i == len(seqs):
+                    break
+                states = model.predict(input_seq)
+                seq_embeddings.append(states)
+                i+=1
+            emb_final = np.mean(np.array(seq_embeddings), 0)[0]
+            print('{};{}'.format(key, emb_final.tolist()), file=f)
     f.close()
 
     ######################################################################################################################
@@ -181,19 +180,20 @@ def start(df, conf, id, ds):
           (max_length_i, max_length_t), NUM_DIM=s2s['vector_dim'], BATCH_SIZE=s2s['batch_size'], EPOCHS=s2s['epochs'],
            MODEL=s2s['model'], WINDOW_SIZE=s2s['window_size'])
 
-    f = open('tmp/{}/models/{}.csv'.format(ds, 'sembeddings_seq2seq' if not id else 'sseq2seq_' + str(id)), 'w')
+    f = open('tmp/{}/models/s{}.csv'.format(ds, id), 'w')
 
     for key in song_seqs_ses.keys():
-        seqs = song_seqs_ses[key]
-        get_seq = gen(seqs, ['START_ ' + seq + ' _END' for seq in seqs], batch_size=1)
-        seq_embeddings = []
-        i=0
-        for (input_seq, _), _ in get_seq:
-            if i == len(seqs):
-                break
-            states = model.predict(input_seq)
-            seq_embeddings.append(states)
-            i+=1
-        emb_final = np.mean(np.array(seq_embeddings), 0)[0]
-        print('{};{}'.format(key, emb_final.tolist()), file=f)
+        if key != '-':
+            seqs = song_seqs_ses[key]
+            get_seq = gen(seqs, ['START_ ' + seq + ' _END' for seq in seqs], batch_size=1)
+            seq_embeddings = []
+            i=0
+            for (input_seq, _), _ in get_seq:
+                if i == len(seqs):
+                    break
+                states = model.predict(input_seq)
+                seq_embeddings.append(states)
+                i+=1
+            emb_final = np.mean(np.array(seq_embeddings), 0)[0]
+            print('{};{}'.format(key, emb_final.tolist()), file=f)
     f.close()

@@ -7,6 +7,7 @@ from gensim.models                      import Word2Vec, Doc2Vec
 from glove 								import Glove
 from sklearn.model_selection            import KFold
 def _rnn_load(ds, path, songs):
+    print('tmp/{}/models/{}.csv'.format(ds, path))
     df          = pd.read_csv('tmp/{}/models/{}.csv'.format(ds, path), sep=';', header=None)
     df.columns  = ['id', 'emb']
     df['emb']   = df['emb'].apply(lambda x: np.fromstring(x.replace('[', '').replace(']', ''), sep=','))
