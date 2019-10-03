@@ -10,7 +10,7 @@ np.set_printoptions(suppress=True)
 df          = pd.read_csv('tmp/xiami-small-test-embeddings/results.csv', header=None)
 df.columns  = ['config', 'algo', 'prec', 'rec', 'f1']
 
-colors      = sns.color_palette("colorblind", 4)
+colors      = sns.color_palette("colorblind", 100)
 
 methods ={"glove_0":"window=15;dim=100;lr=0.03;epochs=20", "glove_1":"window=15;dim=100;lr=0.03;epochs=30", "glove_2":"window=15;dim=100;lr=0.03;epochs=40", "glove_3":"window=15;dim=100;lr=0.035;epochs=20", "glove_4":"window=15;dim=100;lr=0.035;epochs=30", "glove_5":"window=15;dim=100;lr=0.035;epochs=40", "glove_6":"window=20;dim=100;lr=0.03;epochs=20", "glove_7":"window=20;dim=100;lr=0.03;epochs=30", "glove_8":"window=20;dim=100;lr=0.03;epochs=40", "glove_9":"window=20;dim=100;lr=0.035;epochs=20", "glove_10":"window=20;dim=100;lr=0.035;epochs=30", "glove_11":"window=20;dim=100;lr=0.035;epochs=40", "m2v_12":"window=15;dim=50;lr=0.015;epochs=10;down=1e-2;neg=10", "m2v_13":"window=15;dim=50;lr=0.01;epochs=10;down=1e-2;neg=10", "m2v_14":"window=15;dim=50;lr=0.015;epochs=10;down=1e-4;neg=10", "m2v_15":"window=15;dim=50;lr=0.01;epochs=10;down=1e-4;neg=10", "m2v_16":"window=20;dim=50;lr=0.015;epochs=10;down=1e-2;neg=10", "m2v_17":"window=20;dim=50;lr=0.01;epochs=10;down=1e-2;neg=10", "m2v_18":"window=20;dim=50;lr=0.015;epochs=10;down=1e-4;neg=10", "m2v_19":"window=20;dim=50;lr=0.01;epochs=10;down=1e-4;neg=10", "d2v_20":"window=15;dim=50;lr=0.03;epochs=10;down=1e-2;neg=10", "d2v_21":"window=15;dim=50;lr=0.035;epochs=10;down=1e-2;neg=10", "d2v_22":"window=15;dim=50;lr=0.03;epochs=10;down=1e-4;neg=10", "d2v_23":"window=15;dim=50;lr=0.035;epochs=10;down=1e-4;neg=10", "d2v_24":"window=20;dim=50;lr=0.03;epochs=10;down=1e-2;neg=10", "d2v_25":"window=20;dim=50;lr=0.035;epochs=10;down=1e-2;neg=10", "d2v_26":"window=20;dim=50;lr=0.03;epochs=10;down=1e-4;neg=10", "d2v_27":"window=20;dim=50;lr=0.035;epochs=10;down=1e-4;neg=10" }
 glove = []
@@ -18,16 +18,17 @@ barWidth = 0.2
 cols = ['config','window', 'dim', 'lr', 'epochs']
 
 for key in methods.keys():
-    if 'glove' in key:
-        glove.append([key] + [float(k.split('=')[1]) for k in methods[key].split(';')])
+    if 'm2v' in key:
+        m2v.append([key] + [float(k.split('=')[1]) for k in methods[key].split(';')])
 
-confs = pd.DataFrame(glove, columns= cols)
+
+confs = pd.DataFrame(m2v, columns= cols)
 confs.index = confs.config
 confs = confs.drop('config', 1)
 df = df.merge(confs, how='left', left_on='config', right_index=True)
 df['emb']   = df.config.apply(lambda x: x.split('_')[0])
 df['id']    = df.config.apply(lambda x: int(x.split('_')[1]))
-df          = df[df.emb == 'glove']
+df          = df[df.emb == 'm2v']
 df          = df.drop(['emb', 'id'], axis=1)
 
 
