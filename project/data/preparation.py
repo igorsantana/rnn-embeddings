@@ -6,15 +6,15 @@ from os.path                            import exists
 from gensim.models                      import Word2Vec, Doc2Vec
 from glove 								import Glove
 from sklearn.model_selection            import KFold
+
 def _rnn_load(ds, path, songs):
-    print('tmp/{}/models/{}.csv'.format(ds, path))
-    df          = pd.read_csv('tmp/{}/models/{}.csv'.format(ds, path), sep=';', header=None)
-    df.columns  = ['id', 'emb']
-    df['emb']   = df['emb'].apply(lambda x: np.fromstring(x.replace('[', '').replace(']', ''), sep=','))
-    df.index    = df['id']
-    emb_dict    = {}
-    for ix in df['id'].values:
-        emb_dict[ix] = df.loc[ix, 'emb']
+    data = np.load('tmp/{}/models/{}.npy'.format(ds, path))
+    emb_dict = {}
+    for ix in range(data.shape[1]):
+        song    = data[:,ix][0]
+        embed   = data[:,ix][1]
+        emb_dict[song] = embed
+    
     return emb_dict
 
 def __w2v_load(ds, path, songs):
@@ -72,9 +72,9 @@ def prepare_data(df, conf):
     users['history']    = users['session'].apply(lambda x: [sessions[session] for session in list(set(x))])
     users               = users.drop(['song', 'timestamp','session'], axis=1)
     unique_users        = df.user.unique()
-    kf = KFold(n_splits=conf['evaluation']['k'], shuffle=True)
-    i = 1
-    kfold = []
+    kf                  = KFold(n_splits=conf['evaluation']['k'], shuffle=True)
+    i       = 1
+    kfold   = []
     for train, test in kf.split(unique_users):
         train_df = users[users.index.isin(unique_users[train])]
         test_df  = users[users.index.isin(unique_users[test])]

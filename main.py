@@ -1,12 +1,14 @@
 import re
 import os
 import yaml
+import pickle
 import logging
 import argparse
 import pandas                               as pd
 import numpy                                as np
 import multiprocessing                      as mp
 import project.evaluation.run               as r
+from    os.path                     import exists
 from    datetime                    import datetime
 from    project.data.preprocess     import preprocess
 from    project.models.embeddings   import embeddings, embeddings_opt
@@ -26,11 +28,20 @@ if __name__ == '__main__':
     logging.info('Pre-process started for dataset "%s"', conf['evaluation']['dataset'])
     preprocess(conf)
 
-    if conf['embeddings-opt']:
-        methods = embeddings_opt(conf)
+    embeddings_file_path = 'tmp/{}/id_emb.pkl'.format(conf['evaluation']['dataset'])
+    methods = {}
+    if exists(embeddings_file_path):
+        f = open('tmp/{}/id_emb.pkl'.format(conf['evaluation']['dataset']), 'rb')
+        methods = pickle.load(f)
     else:
-        methods = embeddings(conf)
-
+        if conf['embeddings-opt']:
+            methods = embeddings_opt(conf)
+        else:
+            methods = embeddings(conf)
+        f = open('tmp/{}/id_emb.pkl'.format(conf['evaluation']['dataset']), 'wb')
+        pickle.dump(methods, f, pickle.HIGHEST_PROTOCOL)
+        
+    
     cross_validation(conf, methods)
 
 

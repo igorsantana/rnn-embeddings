@@ -66,6 +66,7 @@ def cross_validation(conf, methods):
 			logger.setLevel(logging.ERROR)
 			m2v, sm2v           = get_embeddings_opt(id.split('_')[0], params['dataset'], id, songs)
 			logger.setLevel(logging.INFO)
+			print(len(songs))
 			songs               = pd.DataFrame({ 'm2v': [m2v[x] for x in songs], 'sm2v': [sm2v[x] for x in songs]}, index=songs, columns=['m2v','sm2v'])
 			i = 0
 			metrics = pd.DataFrame(None, index=['m2vTN', 'sm2vTN', 'csm2vTN', 'csm2vUK'], columns=['Config','Algo', 'Fold', 'Precision', 'Recall', 'F-measure'])

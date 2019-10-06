@@ -29,46 +29,39 @@ def sessionize_user(ds, session_time, s_path):
         row[2] = str(row[2])
         print(','.join(row[:-1]), file=f)
 
-def window_sequences(song, seqs, w_size):
-    w = w_size // 2
-    to_r = []
-    for seq in seqs:
-        seq = np.array(seq)
-        ixs = np.where(song == seq)[0]
-        seql = seq.tolist()
-        for ix in ixs:
-            if ix - w < 0:
-                ab = abs(ix - w)
-                b4 = ['-'] * ab + (seql[0:ix])
-            else:
-                b4 = seql[ix - w:ix]
-            if ix + w > len(seq) - 1:
-                ab = abs(ix + w) - (len(seq) - 1)
-                af = seql[ix + 1: len(seq)] + (['-'] * ab )
-            else:
-                af = seql[ix + 1: ix + w + 1]
-            to_r.append(np.array(b4 + [seql[ix]] + af))
-    return np.array(to_r)
-
-
 def gen_seq_files(df, pwd, window_size):
     c_sessions = df.groupby('session')['song'].agg(list)
     u_sessions = df.groupby('user')['song'].agg(list)
-    c_sessions = c_sessions[c_sessions.apply(len) > 1].values
-    u_sessions = u_sessions[u_sessions.apply(len) > 1].values
-    songs      = df.song.unique()
+    num_w      = window_size // 2
     fc         = open(pwd + 'c_seqs.csv', 'w+')
     fu         = open(pwd + 'u_seqs.csv', 'w+')
-    for song in songs:
-        c_seqs = window_sequences(song, c_sessions, window_size)
-        u_seqs = window_sequences(song, u_sessions, window_size)
-        for seq in c_seqs:
-            print(song + '\t'+ '[{}]'.format( ','.join(seq)), file=fc)
-        for seq in u_seqs:
-            print(song + '\t'+ '[{}]'.format( ','.join(seq)), file=fu)
-    
+    dict_song  = {}
+    for session in c_sessions:
+        for ix in range(len(session)):
+            b4 = list(range(ix - num_w, ix))
+            af = list(range(ix + 1, ix + num_w + 1))
+            b4 = [session[i] if i >= 0 else '-' for i in b4]
+            af = [session[i] if i < len(session) else '-' for i in af]
+            if session[ix] not in dict_song:
+                dict_song[session[ix]] = []
+            dict_song[session[ix]].append(b4 + [session[ix]] + af)
+    for song, values in dict_song.items():
+        for seq in values:
+            print(song + '\t'+ '{}'.format(seq), file=fc)
 
-
+    dict_song  = {}
+    for session in u_sessions:
+        for ix in range(len(session)):
+            b4 = list(range(ix - num_w, ix))
+            af = list(range(ix + 1, ix + num_w + 1))
+            b4 = [session[i] if i >= 0 else '-' for i in b4]
+            af = [session[i] if i < len(session) else '-' for i in af]
+            if session[ix] not in dict_song:
+                dict_song[session[ix]] = []
+            dict_song[session[ix]].append(b4 + [session[ix]] + af)
+    for song, values in dict_song.items():
+        for seq in values:
+            print(song + '\t'+ '{}'.format(seq), file=fu)
 
 
 def preprocess(conf):
