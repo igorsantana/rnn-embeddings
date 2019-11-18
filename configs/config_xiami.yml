@@ -1,0 +1,29 @@
+models:
+  seq2seq:
+    vector_dim: [256]
+    batch_size: [16]
+    epochs: [100]
+    model: ['GRU', 'RNN', 'LSTM']
+    window_size: [10]
+session:
+  interval: 60
+evaluation:
+  dataset: 'xiami'
+  cross-validation: 5
+  k: 5
+  topN: 5
+logfile: 'outputs/xiami.log'
+embeddings-opt: True
+embeddings:
+  music2vec: 
+    usage: False
+    path: 'music2vec'
+  doc2vec: 
+    usage: False
+    path: 'doc2vec'
+  glove: 
+    usage: False
+    path: 'glove'
+  seq2seq: 
+    usage: True
+    path: 'seq2seq'
