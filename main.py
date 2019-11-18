@@ -11,7 +11,7 @@ import project.evaluation.run               as r
 from    os.path                     import exists
 from    datetime                    import datetime
 from    project.data.preprocess     import preprocess
-from    project.models.embeddings   import embeddings, embeddings_opt
+from    project.models.embeddings   import embeddings
 from    project.evaluation.run      import cross_validation
 
 
@@ -22,27 +22,19 @@ if __name__ == '__main__':
     parser.add_argument('--config', help='Configuration file', type=str)
     args = parser.parse_args()
     conf = yaml.safe_load(open(args.config))
+
     logging.basicConfig(level=logging.INFO, filename=conf['logfile'], filemode='w', format='%(asctime)s - %(message)s', datefmt='%d/%b/%Y %H:%M:%S')
     logging.info('Config file %s read', args.config)
-    logging.info('Project running in (%s) mode', 'opt' if conf['embeddings-opt'] else 'embeddings')
     logging.info('Pre-process started for dataset "%s"', conf['evaluation']['dataset'])
+    
     preprocess(conf)
 
-    embeddings_file_path = 'tmp/{}/id_emb.pkl'.format(conf['evaluation']['dataset'])
-    methods = {}
-    if exists(embeddings_file_path):
-        f = open('tmp/{}/id_emb.pkl'.format(conf['evaluation']['dataset']), 'rb')
-        methods = pickle.load(f)
-    else:
-        if conf['embeddings-opt']:
-            methods = embeddings_opt(conf)
-        else:
-            methods = embeddings(conf)
-        f = open('tmp/{}/id_emb.pkl'.format(conf['evaluation']['dataset']), 'wb')
-        pickle.dump(methods, f, pickle.HIGHEST_PROTOCOL)
-        
+    embeddings(conf)
+
+    ids = np.load('tmp/{}/models/ids.npy'.format(conf['evaluation']['dataset']))
+
     
-    cross_validation(conf, methods)
+    # cross_validation(conf, methods)
 
 
 
