@@ -1,5 +1,6 @@
 import sys
 import logging
+import pickle
 import pandas                       as pd
 import numpy                        as np
 from os                             import makedirs
@@ -41,10 +42,9 @@ def glove(data, glove_type, window, dim, lr, epochs):
     glove.add_dictionary(corpus.dictionary)
     return glove
 
-def embeddings(conf):
+def embeddings(df, conf):
     ds          = conf['evaluation']['dataset']
     logger      = logging.getLogger()
-    df          = pd.read_csv('dataset/{}/session_listening_history.csv'.format(ds), sep = ',')
     cwd         = 'tmp/{}/models'.format(ds)
     logger.setLevel(logging.ERROR)
 
@@ -60,8 +60,22 @@ def embeddings(conf):
         if method == 'rnn':
             for s in generator:
                 to_str  = setups.setup_to_string(c_id, s, method)
-                path    = '{}/{}__{}.npy'.format(cwd, method, c_id)
-                rnn(ds, s['model'], s['window'], s['epochs'], s['batch'], s['dim'], s['num_units'])
+
+                user    = rnn(df, 'user', ds, s['model'], s['window'], s['epochs'], s['batch'], s['dim'], s['num_units'])
+                session = rnn(df, 'session', ds, s['model'], s['window'], s['epochs'], s['batch'], s['dim'], s['num_units'])
+
+                path    = '{}/{}__{}.pickle'.format(cwd, method, c_id)
+                path_s  = '{}/s{}__{}.pickle'.format(cwd, method, c_id)
+
+                fu = open(path, 'wb')
+                fs = open(path_s, 'wb')
+
+                pickle.dump(user, fu, protocol=pickle.HIGHEST_PROTOCOL)
+                pickle.dump(session, fs, protocol=pickle.HIGHEST_PROTOCOL)
+                
+                fu.close()
+                fs.close()
+
                 setups_id.append([c_id, to_str, path])
                 c_id+=1
         if method == 'music2vec':

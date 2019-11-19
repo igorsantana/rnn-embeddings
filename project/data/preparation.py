@@ -1,59 +1,48 @@
 import logging
 import pandas as pd
 import numpy as np
+import pickle
 from os                                 import makedirs
 from os.path                            import exists
 from gensim.models                      import Word2Vec, Doc2Vec
 from glove 								import Glove
 from sklearn.model_selection            import KFold
 
-def _rnn_load(ds, path, songs):
-    data = np.load('tmp/{}/models/{}.npy'.format(ds, path))
+def _rnn_load(path, songs):
+    data = pickle.load(open(path, 'rb'))
     emb_dict = {}
-    for ix in range(data.shape[1]):
-        song    = data[:,ix][0]
-        embed   = data[:,ix][1]
-        emb_dict[song] = embed
-    
+    for song in songs:
+        emb_dict[song] = data[song]
     return emb_dict
 
-def __w2v_load(ds, path, songs):
-    wv = Word2Vec.load('tmp/{}/models/{}.model'.format(ds, path)).wv
+def __w2v_load(path, songs):
+    wv = Word2Vec.load(path).wv
     emb_dict = {}
     for song in songs:
         emb_dict[song] = wv[song]
     return emb_dict
 
-def __g_load(ds, path, songs):
-    glove = Glove.load('tmp/{}/models/{}.model'.format(ds, path))
+def __g_load(path, songs):
+    glove = Glove.load(path)
     emb_dict = {}
     for song in songs:
         emb_dict[song] = glove.word_vectors[glove.dictionary[song]]
     return emb_dict
 
-def get_embeddings(method, ds, songs, conf):
-    glove, music2vec, doc2vec, seq2seq = conf['glove'], conf['music2vec'], conf['doc2vec'], conf['seq2seq']
-    if method == 'glove':
-        return __g_load(ds, glove['path'], songs),__g_load(ds, 's' + glove['path'],songs)
-    if method == 'music2vec':
-        return __w2v_load(ds, music2vec['path'], songs), __w2v_load(ds, 's' + music2vec['path'], songs)
-    if method == 'doc2vec':
-        return __w2v_load(ds, doc2vec['path'], songs), __w2v_load(ds, 's' + doc2vec['path'], songs)
-    if method == 'seq2seq':
-        return _rnn_load(ds, seq2seq['path'], songs), _rnn_load(ds, 's' + seq2seq['path'], songs)
+def get_embeddings(path, songs):
+    path_arr        = path.split('/')
+    session_file    = '/'.join(path_arr[:-1] + ['s' + path_arr[-1]])
+    user_file       = path
+    
+    if 'glove' in path:
+        return __g_load(user_file, songs),__g_load(session_file, songs)
+    if 'music2vec' in path:
+        return __w2v_load(user_file, songs), __w2v_load(session_file, songs)
+    if 'doc2vec' in path:
+        return __w2v_load(user_file, songs), __w2v_load(session_file, songs)
+    if 'rnn' in path:
+        return _rnn_load(user_file, songs), _rnn_load(session_file, songs)
     return {},{} 
-
-def get_embeddings_opt(method, ds, path, songs):
-    if method == 'glove':
-        return __g_load(ds, path, songs),__g_load(ds, 's' + path,songs)
-    if method == 'm2v':
-        return __w2v_load(ds, path, songs), __w2v_load(ds, 's' + path,songs)
-    if method == 'd2v':
-        return __w2v_load(ds, path, songs), __w2v_load(ds, 's' + path,songs)
-    if method == 'seq2seq':
-        return _rnn_load(ds, path, songs), _rnn_load(ds, 's' + path,songs)
-    return {},{} 
-
 
 def prepare_data(df, conf):
     ds                  = conf['evaluation']['dataset']

@@ -23,7 +23,6 @@ class Helper():
 
     def user_sessions(self, user):
         history = self.test.loc[user, 'history']
-        
         return [(s[:len(s)//2], s[len(s)//2:]) for s in history]
 
     def song_ix(self, song):

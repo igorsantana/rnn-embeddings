@@ -9,6 +9,14 @@ import pandas   as pd
 import multiprocessing as mp
 from datetime import datetime, timedelta
 
+def remove_sessions(df, leq=1):
+    df          = df.copy(deep=True)
+    group       = df.groupby(by='session').agg(list)
+    group       = group['song'].apply(len)
+    sessions    = group[group > leq].index.values
+    return df[df.session.isin(sessions)]
+
+
 def sessionize_user(ds, session_time, s_path):
     df              = pd.read_csv('dataset/{}/listening_history.csv'.format(ds), sep = ',')
     df['timestamp'] = df['timestamp'].astype('datetime64')

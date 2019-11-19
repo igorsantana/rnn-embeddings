@@ -1,0 +1,44 @@
+models:
+  rnn:
+    embedding_dim: [64]
+    batch: [512]
+    epochs: [100]
+    model: ['GRU']
+    window: [5]
+    num_units: [64]
+  music2vec:
+    window: [5]
+    epochs: [10]
+    down_sample: [1e-2]
+    learning_rate: [0.02]
+    embedding_dim: [300]
+    negative_sample: [10]
+  doc2vec:
+    window: [5]
+    epochs: [10]
+    down_sample: [1e-2]
+    learning_rate: [0.02]
+    embedding_dim: [300]
+    negative_sample: [10]
+  glove:
+    window: [5]
+    embedding_dim: [100]
+    epochs: [5]
+    learning_rate: [0.01]
+session:
+  interval: 60
+evaluation:
+  dataset: 'xiami-smaller'
+  cross-validation: 5
+  k: 5
+  topN: 5
+logfile: 'outputs/xiami-smaller.log'
+embeddings:
+  music2vec: 
+    usage: True
+  doc2vec: 
+    usage: True
+  glove: 
+    usage: True
+  rnn: 
+    usage: True

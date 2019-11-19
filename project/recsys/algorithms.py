@@ -8,7 +8,7 @@ from project.evaluation.metrics             import get_metrics
 from datetime                               import datetime
 from sklearn.metrics.pairwise               import cosine_similarity
 
-def execute_algo(train, test, songs, fold, topN, k_sim, data):
+def execute_algo(train, test, songs, topN, k_sim, data):
 
     m2vTN   = []
     sm2vTN  = []
