@@ -3,3 +3,4 @@ tmp/*
 **/*.pyc
 **/*.cpython-37.pyc
 .ipynb_checkpoints/*
+.history

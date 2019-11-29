@@ -1,4 +1,4 @@
-import logging
+
 import pandas as pd
 import numpy as np
 import pickle
@@ -12,7 +12,8 @@ def _rnn_load(path, songs):
     data = pickle.load(open(path, 'rb'))
     emb_dict = {}
     for song in songs:
-        emb_dict[song] = data[song]
+        emb_dict[song] = np.mean(data[song],axis=0)
+
     return emb_dict
 
 def __w2v_load(path, songs):

@@ -24,12 +24,6 @@ class AlgoMetrics():
             return self.f1 + [np.mean(self.f1, axis=0)] + [np.std(self.f1, axis=0)]
         return 1
         
-def center(df):
-    df.style.set_table_styles([
-        {"selector": "th", "props": [("text-align", "center")]},
-        {"selector": "td", "props": [("text-align", "center")]}])
-    return df
-
 class Results():
     def __init__(self, setups, k):
         self.metrics    = {}
@@ -37,6 +31,7 @@ class Results():
         for _, params, _ in setups:
             self.metrics[params] = {    'm2vTN': AlgoMetrics('m2vTN', params), 'sm2vTN': AlgoMetrics('sm2vTN', params),
                                         'csm2vTN': AlgoMetrics('csm2vTN', params), 'csm2vUK': AlgoMetrics('csm2vUK', params)}
+        self.final_df = pd.DataFrame()
         
     def fold_results(self, params, m2vTN, sm2vTN, csm2vTN, csm2vUK):
         self.metrics[params]['m2vTN'].add(m2vTN)
@@ -57,11 +52,32 @@ class Results():
             df = pd.DataFrame(data)
             finals.append(df)
         return finals
-            
-    def finish(self, params):
+    
+    def concat_summary_dataframe(self, df):
+        self.final_df = pd.concat([self.final_df, df])
+
+    def setup_finish(self, params):
         m2vTN, sm2vTN, csm2vTN, csm2vUK = self.get_results(params)
         self.metrics[params] = {'m2vTN': m2vTN, 'sm2vTN': sm2vTN, 'csm2vTN': csm2vTN, 'csm2vUK': csm2vUK}
-        print(center(m2vTN[m2vTN['folds'] == 'mean']))
-        print(center(sm2vTN[sm2vTN['folds'] == 'mean']))
-        print(center(csm2vTN[csm2vTN['folds'] == 'mean']))
-        print(center(csm2vUK[csm2vUK['folds'] == 'mean']))
+        r1 = m2vTN[m2vTN['folds'] == 'mean']
+        r2 = sm2vTN[sm2vTN['folds'] == 'mean']
+        r3 = csm2vTN[csm2vTN['folds'] == 'mean']
+        r4 = csm2vUK[csm2vUK['folds'] == 'mean']
+        df = pd.concat([r1, r2, r3, r4], axis=0)
+        df = df.drop(columns=['folds']).reset_index(drop=True)
+        df['params'] = np.array([params] * 4)
+        self.concat_summary_dataframe(df)
+        
+    def report(self, path_s, path_f):
+        df_full = pd.DataFrame()
+        for param, metrics in self.metrics.items():
+            r1 = metrics['m2vTN']
+            r2 = metrics['sm2vTN']
+            r3 = metrics['csm2vTN']
+            r4 = metrics['csm2vUK']
+            df = pd.concat([r1, r2, r3, r4])
+            df['params'] = 7 * 4 * [param]
+            df_full = pd.concat([df_full, df])
+        
+        self.final_df.set_index('params').to_csv(path_s, sep=';', decimal=',')
+        df_full.set_index(['params', 'algo']).to_csv(path_f, sep=';', decimal=',')

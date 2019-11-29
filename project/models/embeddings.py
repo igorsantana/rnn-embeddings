@@ -1,5 +1,5 @@
 import sys
-import logging
+
 import pickle
 import pandas                       as pd
 import numpy                        as np
@@ -44,9 +44,7 @@ def glove(data, glove_type, window, dim, lr, epochs):
 
 def embeddings(df, conf):
     ds          = conf['evaluation']['dataset']
-    logger      = logging.getLogger()
     cwd         = 'tmp/{}/models'.format(ds)
-    logger.setLevel(logging.ERROR)
 
     if not exists(cwd):
         makedirs(cwd)
@@ -61,8 +59,7 @@ def embeddings(df, conf):
             for s in generator:
                 to_str  = setups.setup_to_string(c_id, s, method)
 
-                user    = rnn(df, 'user', ds, s['model'], s['window'], s['epochs'], s['batch'], s['dim'], s['num_units'])
-                session = rnn(df, 'session', ds, s['model'], s['window'], s['epochs'], s['batch'], s['dim'], s['num_units'])
+                user, session = rnn(df, ds, s['model'], s['window'], s['epochs'], s['batch'], s['dim'], s['num_units'])
 
                 path    = '{}/{}__{}.pickle'.format(cwd, method, c_id)
                 path_s  = '{}/s{}__{}.pickle'.format(cwd, method, c_id)

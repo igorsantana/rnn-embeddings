@@ -1,102 +1,152 @@
-from   os.path                  import exists
-from tensorflow.keras.utils     import to_categorical
-from tensorflow.keras.layers    import Embedding, LSTM, Dense, GRU, SimpleRNN
-from tensorflow.keras.models    import Sequential
-from tensorflow.keras.callbacks import EarlyStopping
-from tensorflow.keras.preprocessing.sequence import TimeseriesGenerator
-import tensorflow   as tf
-import numpy        as np
-import pandas       as pd
+from os.path                        import exists
+from keras.utils                    import to_categorical
+from keras.models                   import Model
+from keras.layers                   import Embedding, CuDNNLSTM, Dense, CuDNNGRU, SimpleRNN, Input, TimeDistributed
+from keras.models                   import Sequential
+from keras.callbacks                import EarlyStopping
+from keras.preprocessing.sequence   import TimeseriesGenerator
 import os
 import time
+import numpy        as np
+import pickle       as pk
+import pandas       as pd
+import tensorflow   as tf
 
 
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '4'
 
+def window_seqs(sequence, w_size):
+    ix = 0
+    max_ix = (len(sequence) - 1) - w_size
+    x = []
+    y = []
+    while ix < max_ix:
+        x.append(sequence[ix:ix+w_size])
+        y.append([sequence[ix+w_size]])
+        ix+=1
+    return np.vstack(x), np.vstack(y)
 
-def get_model(vocab_size, MODEL, EMBEDDING_DIM, W_SIZE, NUM_UNITS):
-    model = Sequential()
-    model.add(Embedding(input_dim=vocab_size, output_dim= EMBEDDING_DIM, input_length= W_SIZE))
-    if MODEL == 'GRU':
-        model.add(GRU(NUM_UNITS))
-    if MODEL == 'RNN':
-        model.add(SimpleRNN(NUM_UNITS))
-    if MODEL == 'LSTM':
-        model.add(LSTM(NUM_UNITS))
-    model.add(Dense(vocab_size, activation='softmax'))
-    model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['acc'])
-    return model
-
-def rnn(df, emb_type, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS):
+def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS):
     pwd = 'dataset/{}/'.format(DS)
-    if not exists(pwd + '{}_sessions.txt'.format(emb_type)):
-        sessions    = df.groupby(by=emb_type).agg(list)['song'].values.tolist()
-        f           = open(pwd + '{}_sessions.txt'.format(emb_type), mode='w+')
-        for session in sessions:
-            print('\t'.join(session), file=f)
+
+    sequences = df.song.values.tolist()
+    sequences = np.array(sequences).ravel().astype(str)
+    
+    x, y = window_seqs(sequences, W_SIZE)
+    if not exists(pwd + 'sessions_{}.txt'.format(W_SIZE)):
+        f           = open(pwd + 'sessions_{}.txt'.format(W_SIZE), mode='w+')
+        for seq, target in zip(x, y):
+            print(';'.join(seq) + '\t' + target[0], file=f)
         f.close()
-    sessions        = open(pwd + '{}_sessions.txt'.format(emb_type)).readlines()
+
+    sessions        = open(pwd + 'sessions_{}.txt'.format(W_SIZE)).readlines()
     sessions        = [session.replace('\n', '').split('\t') for session in sessions]
-    full            = [j for i in sessions for j in i]
+    sessions        = [data[0].split(';') for data in sessions]
+    targets         = [data[1] for data in sessions]
+    full            = [j for i in (sessions) for j in i]
+    full            = full + targets
     vocab           = sorted(set(full))
+    vocab_size      = len(vocab)
     song2ix         = {u:i for i, u in enumerate(vocab)}
-    ix_sessions     = np.array([np.array([song2ix[song] for song in session]) for session in sessions])
-    sessions_len    = np.array([len(session) for session in sessions])
-    ix_sessions     = np.delete(ix_sessions, np.where(sessions_len <= W_SIZE), 0)
-    vocab_size      = len(sorted(set(full))) + 1
+    sequences       = []
 
-    sequences = []
+    for seq, target in zip(sessions, targets):
+        seq_ix      = [song2ix[song] for song in seq]
+        target_ix   = song2ix[target]
+        sequences.append([np.array(seq_ix), np.array([target_ix])])
 
-    for session in ix_sessions:
-        max_walk_ix = len(session) - W_SIZE
-        ix = 0
-        while ix < max_walk_ix:
-            x = session[ix:ix+ W_SIZE]
-            y = session[ix+ W_SIZE:ix+ W_SIZE + 1]
-            sequences.append([x,y])
-            ix+=1
-
-    sequences = np.array(sequences)
+    sequences   = np.array(sequences)
     np.random.shuffle(sequences)
-    X, Y    = np.stack(sequences[:,0], axis=0), np.stack(sequences[:,1], axis=0)
-
+    X, Y        = np.stack(sequences[:,0], axis=0), np.stack(sequences[:,1], axis=0)
     X_train, X_test = X[int(len(X) *.1):], X[:int(len(X) *.1)]
     y_train, y_test = Y[int(len(Y) *.1):], Y[:int(len(Y) *.1)]
-
-    y_train         = to_categorical(y_train, num_classes=vocab_size)
-    y_test          = to_categorical(y_test, num_classes=vocab_size)
 
     def batch(X, y, bs):
         while True:
             for ix in range(0, len(X), bs):
                 input  = X[ix:ix+bs]
                 target = y[ix:ix+bs]
+                yield input, to_categorical(target, num_classes=vocab_size)
 
-                yield input, target
+    input       = Input(shape=(W_SIZE,))
+    embedding   = Embedding(input_dim=vocab_size, output_dim= EMBEDDING_DIM, input_length= W_SIZE)(input)
+    if MODEL == 'GRU':
+        rec, state  = CuDNNGRU(NUM_UNITS, return_state=True)(embedding)
+    if MODEL == 'RNN':
+        rec, state  = SimpleRNN(NUM_UNITS, return_state=True)(embedding)
+    if MODEL == 'LSTM':
+        rec, state_c, state_h  = CuDNNLSTM(NUM_UNITS, return_state=True)(embedding)
+        state       = [state_c, state_h]
+    dense       = Dense(vocab_size, activation='softmax')(rec)
+    model       = Model(inputs=input, outputs=dense)
+    inference   = Model(inputs=input, outputs=state)
+    es          = EarlyStopping(monitor='val_acc', mode='max', verbose=0, patience=5)
 
-
-    es = EarlyStopping(monitor='val_acc', mode='max', verbose=0, patience=1)
-    model = get_model(vocab_size, MODEL, EMBEDDING_DIM, W_SIZE, NUM_UNITS)
+    model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
     model.summary()
-    model.fit_generator(generator=batch(X_train, y_train, BATCH_SIZE), 
-                        steps_per_epoch=len(X_train) // BATCH_SIZE,
-                        epochs=EPOCHS,
-                        validation_data=batch(X_test, y_test, BATCH_SIZE),
-                        validation_steps=len(X_test) // BATCH_SIZE, 
-                        callbacks=[es])
+    model.fit_generator(generator=batch(X_train, y_train, BATCH_SIZE), steps_per_epoch=len(X_train) // BATCH_SIZE,
+                        epochs=EPOCHS, validation_data=batch(X_test, y_test, BATCH_SIZE),
+                        validation_steps=len(X_test) // BATCH_SIZE,  callbacks=[es])
 
-    embeddings      = model.layers[0].get_weights()[0]
-    song_embeddings = { s:embeddings[ix] for s, ix in song2ix.items()}
-    return song_embeddings
+    model.save_weights("best.h5")
+    # User Embeddings
+
+    all_users_playlists = df.groupby('user').agg(list)['song'].values
+    song_windows = {}
+    for song in vocab:
+        if song not in song_windows:
+            song_windows[song] = []
+
+        for playlist in all_users_playlists:
+            ixes = [i for i, x in enumerate(playlist) if (x == song)]
+            for ix in ixes:
+                if ix-W_SIZE > 0:
+                    song_windows[song].append(playlist[ix-W_SIZE:ix])
+                # if ix+W_SIZE < len(playlist):
+                #     song_windows[song].append(playlist[ix:ix+W_SIZE])
+
+    user_emb = {}
+
+    for k, occurrences in song_windows.items():
+        bs = len(occurrences)
+        data = np.array([[song2ix[song] for song in occ] for occ in occurrences])
+        # O vetor de embeddings que serã inferido será uma repetição da mesma música n vezes
+        if bs == 0:
+            data = np.array([[song2ix[song]] * W_SIZE])
+            bs = 1
+        state = inference.predict(np.array(data), batch_size=bs)
+        emb = np.mean(np.array(state), axis=0)
+        user_emb[k] = emb
+
+    # # Session Embeddings
+
+    all_sessions_playlists = df.groupby('session').agg(list)['song'].values
+    song_windows = {}
+    for song in vocab:
+        if song not in song_windows:
+            song_windows[song] = []
+        for playlist in all_sessions_playlists:
+            ixes = [i for i, x in enumerate(playlist) if (x == song)]
+            for ix in ixes:
+                if ix-W_SIZE > 0:
+                    song_windows[song].append(playlist[ix-W_SIZE:ix])
+                if ix+W_SIZE < len(playlist):
+                    song_windows[song].append(playlist[ix:ix+W_SIZE])
+    session_emb = {}
+
+    for k, occurrences in song_windows.items():
+        bs = len(occurrences)
+        data = np.array([[song2ix[song] for song in occ] for occ in occurrences])
+        data = np.array(data)
+        # O vetor de embeddings que será inferido será uma repetição da mesma música n vezes
+        if bs == 0:
+            data = np.array([[song2ix[song]] * W_SIZE])
+            bs = 1
+        state = inference.predict(data, batch_size=bs)
+        emb = np.mean(np.array(state), axis=0)
+        session_emb[k] = emb
+    return user_emb, session_emb
 
 
-# W_SIZE          = 5
-# BATCH_SIZE      = 64
-# EMBEDDING_DIM   = 128
-# NUM_UNITS       = 128
-# EPOCHS          = 100
-
-# pwd = '../../dataset/{}/'.format('xiami-small')
-#     df          = pd.read_csv(pwd + 'session_listening_history.csv', sep = ',')
-#     
 

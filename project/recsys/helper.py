@@ -12,8 +12,6 @@ class Helper():
         self.songs           = songs
         self.m2v_songs       = self.songs.m2v.tolist() 
         self.sm2v_songs      = self.songs.sm2v.tolist()
-        self.m2v_songs       = np.array(self.m2v_songs, dtype=np.float)
-        self.sm2v_songs      = np.array(self.sm2v_songs, dtype=np.float)
         self.songs_ix        = { v:k for k,v in enumerate(songs.index, 0) }
         self.ix_users        = { v:k for k,v in enumerate(np.concatenate([train.index.values, test.index.values]).tolist(), 0)   }
         self.num_users       = len(self.ix_users)

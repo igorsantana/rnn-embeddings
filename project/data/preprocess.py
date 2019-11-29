@@ -3,22 +3,21 @@ import csv
 import math
 import json
 import yaml
-import logging
+
 import numpy 	as np
 import pandas   as pd
 import multiprocessing as mp
 from datetime import datetime, timedelta
 
 def remove_sessions(df, leq=1):
-    df          = df.copy(deep=True)
-    group       = df.groupby(by='session').agg(list)
-    group       = group['song'].apply(len)
-    sessions    = group[group > leq].index.values
-    return df[df.session.isin(sessions)]
+    group   = df.groupby(by='session').agg(list)
+    group   = group['song'].apply(len)
+    to_stay = group[group > leq].index.values
+    return df[df.session.isin(to_stay)]
 
 
 def sessionize_user(ds, session_time, s_path):
-    df              = pd.read_csv('dataset/{}/listening_history.csv'.format(ds), sep = ',')
+    df              = pd.read_csv('dataset/{}/listening_history.csv'.format(ds), sep = ';')
     df['timestamp'] = df['timestamp'].astype('datetime64')
     df['dif']       = df.timestamp.diff()
     df['session']   = df.apply(lambda x: 'NEW_SESSION' if x.dif >= timedelta(minutes=session_time) else 'SAME_SESSION', axis=1)
@@ -26,7 +25,7 @@ def sessionize_user(ds, session_time, s_path):
     l_u  = ''
     f = open(s_path, 'w+')
     print(','.join(['user', 'song', 'timestamp', 'session']), file=f)
-    logging.info('Sessionized "%s" data file: %s', ds, s_path)
+    print('Sessionized "%s" data file: %s' % (ds, s_path))
     for row in df.values:
         if s_no == 0:
             l_u = row[0]
@@ -76,9 +75,9 @@ def preprocess(conf):
     ds       = conf['evaluation']['dataset']
     interval = conf['session']['interval']
     if path.exists('dataset/{}/session_listening_history.csv'.format(ds)):
-        logging.info('The "%s" dataset is already sessionized', ds)
+        print('The "%s" dataset is already sessionized' % ds)
         return
-    logging.info('Started to sessionize dataset "%s"', ds)
+    print('Started to sessionize dataset "%s"' % ds)
     sessionize_user(ds, interval, 'dataset/{}/session_listening_history.csv'.format(ds))
     
 

@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-import logging
+
 from project.data.preprocess        import gen_seq_files
 from os.path                        import exists
 from keras.models                   import Model
@@ -138,7 +138,7 @@ def __run_s2s(sessions_i, sessions_t, num_songs, song_ix, max_l, NUM_DIM=128, BA
 def start(df, conf, id, ds):
     s2s = conf
     if not exists('dataset/{}/u_seqs.csv'.format(ds)):
-        logging.info('Files %s and %s are going to be at "%s"', 'u_seqs.csv', 'c_seqs.csv', 'dataset/{}/'.format(ds))
+        print('Files %s and %s are going to be at "%s"' % ('u_seqs.csv', 'c_seqs.csv', 'dataset/{}/'.format(ds)))
         gen_seq_files(df, 'dataset/{}/'.format(ds), conf['window_size'])
     songs       = df.song.unique()
     del df
