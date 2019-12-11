@@ -8,13 +8,15 @@ class Setups():
 
     def rnn_setups(self):
         c = self.models_config['rnn']
+        
         for m in c['model']:
             for w in c['window']:
                 for n in c['num_units']:
                     for e in c['embedding_dim']:
-                        for b in c['batch']:
-                            for ep in c['epochs']:
-                                yield {'window': int(w), 'model': m, 'dim': int(e), 'batch': int(b), 'epochs': int(ep), 'num_units': int(n)}
+                        for ep in c['epochs']:
+                                for bi in c['bi']:
+                                    yield { 'window': int(w), 'model': m, 'dim': int(e), 'batch': int(c['batch']), 
+                                            'epochs': int(ep), 'num_units': int(n), 'bidi': bi}
                             
     def d2v_m2v_setups(self, model):
         c = self.models_config[model]

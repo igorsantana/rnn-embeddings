@@ -59,19 +59,20 @@ def embeddings(df, conf):
             for s in generator:
                 to_str  = setups.setup_to_string(c_id, s, method)
 
-                user, session = rnn(df, ds, s['model'], s['window'], s['epochs'], s['batch'], s['dim'], s['num_units'])
-
                 path    = '{}/{}__{}.pickle'.format(cwd, method, c_id)
                 path_s  = '{}/s{}__{}.pickle'.format(cwd, method, c_id)
 
-                fu = open(path, 'wb')
-                fs = open(path_s, 'wb')
+                if not exists(path):
+                    user, session = rnn(df, ds, s['model'], s['window'], s['epochs'], 
+                                        s['batch'], s['dim'], s['num_units'], s['bidi'])
+                    fu = open(path, 'wb')
+                    fs = open(path_s, 'wb')
 
-                pickle.dump(user, fu, protocol=pickle.HIGHEST_PROTOCOL)
-                pickle.dump(session, fs, protocol=pickle.HIGHEST_PROTOCOL)
-                
-                fu.close()
-                fs.close()
+                    pickle.dump(user, fu, protocol=pickle.HIGHEST_PROTOCOL)
+                    pickle.dump(session, fs, protocol=pickle.HIGHEST_PROTOCOL)
+                    
+                    fu.close()
+                    fs.close()
 
                 setups_id.append([c_id, to_str, path])
                 c_id+=1
@@ -79,14 +80,16 @@ def embeddings(df, conf):
             for s in generator:
                 to_str  = setups.setup_to_string(c_id, s, method)
 
-                m2v  = music2vec(df,'user', s['dim'], s['lr'], s['window'], s['down'], s['neg_sample'], s['epochs'])
-                sm2v = music2vec(df,'session', s['dim'], s['lr'], s['window'], s['down'], s['neg_sample'], s['epochs'])
-
                 path    = '{}/{}__{}.model'.format(cwd, method, c_id)
                 path_s  = '{}/s{}__{}.model'.format(cwd, method, c_id) 
 
-                m2v.save(path)
-                sm2v.save(path_s)
+                if not exists(path):
+
+                    m2v  = music2vec(df,'user', s['dim'], s['lr'], s['window'], s['down'], s['neg_sample'], s['epochs'])
+                    sm2v = music2vec(df,'session', s['dim'], s['lr'], s['window'], s['down'], s['neg_sample'], s['epochs'])
+
+                    m2v.save(path)
+                    sm2v.save(path_s)
 
                 setups_id.append([c_id, to_str, path])
 
@@ -94,15 +97,16 @@ def embeddings(df, conf):
         if method == 'doc2vec':
             for s in generator:
                 to_str  = setups.setup_to_string(c_id, s, method)
-
-                d2v = doc2vec(df,'user_doc', s['dim'], s['lr'], s['window'], s['down'], s['neg_sample'], s['epochs'])
-                sd2v = doc2vec(df,'session_doc', s['dim'], s['lr'], s['window'], s['down'], s['neg_sample'], s['epochs'])
-
                 path    = '{}/{}__{}.model'.format(cwd, method, c_id)
                 path_s  = '{}/s{}__{}.model'.format(cwd, method, c_id) 
 
-                d2v.save(path)
-                sd2v.save(path_s)
+                if not exists(path):
+
+                    d2v = doc2vec(df,'user_doc', s['dim'], s['lr'], s['window'], s['down'], s['neg_sample'], s['epochs'])
+                    sd2v = doc2vec(df,'session_doc', s['dim'], s['lr'], s['window'], s['down'], s['neg_sample'], s['epochs'])
+
+                    d2v.save(path)
+                    sd2v.save(path_s)
 
                 setups_id.append([c_id, to_str, path])
 
@@ -110,15 +114,16 @@ def embeddings(df, conf):
         if method == 'glove':
             for s in generator:
                 to_str  = setups.setup_to_string(c_id, s, method)
-
-                glv = glove(df, 'user', s['window'], s['dim'], s['lr'], s['epochs'])
-                sglv = glove(df, 'session', s['window'], s['dim'], s['lr'], s['epochs'])
-                
                 path    = '{}/{}__{}.model'.format(cwd, method, c_id)
                 path_s  = '{}/s{}__{}.model'.format(cwd, method, c_id) 
 
-                glv.save(path)
-                sglv.save(path_s)
+                if not exists(path):
+
+                    glv = glove(df, 'user', s['window'], s['dim'], s['lr'], s['epochs'])
+                    sglv = glove(df, 'session', s['window'], s['dim'], s['lr'], s['epochs'])
+                    
+                    glv.save(path)
+                    sglv.save(path_s)
 
                 setups_id.append([c_id, to_str, path])
 
