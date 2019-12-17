@@ -2,7 +2,6 @@ import re
 import os
 import yaml
 import pickle
-
 import argparse
 import pandas                               as pd
 import numpy                                as np
@@ -37,10 +36,6 @@ if __name__ == '__main__':
     emb_path = 'tmp/{}/models/ids.npy'.format(ds)
     
     if not exists(emb_path):
-        embeddings(df, conf)
+    	embeddings(df, conf)
     ids = np.load(emb_path)
-    
-    cross_validation(df, conf, ids)
-
-
-
+    cross_validation(df, conf, ids[3:])

@@ -1,10 +1,31 @@
 models:
-  seq2seq:
-    vector_dim: [256]
-    batch_size: [16]
+  rnn:
+    embedding_dim: [256]
+    batch: 512
     epochs: [100]
-    model: ['GRU', 'RNN', 'LSTM']
-    window_size: [10]
+    model: ['LSTM']
+    window: [5]
+    bi: [False]
+    num_units: [512]
+  music2vec:
+    window: [5]
+    epochs: [5]
+    down_sample: [1e-3]
+    learning_rate: [0.025]
+    embedding_dim: [300]
+    negative_sample: [20]
+  doc2vec:
+    window: [10]
+    epochs: [10]
+    down_sample: [1e-4]
+    learning_rate: [0.025]
+    embedding_dim: [50]
+    negative_sample: [10]
+  glove:
+    window: [10]
+    embedding_dim: [100]
+    epochs: [15]
+    learning_rate: [0.025]
 session:
   interval: 60
 evaluation:
@@ -12,18 +33,15 @@ evaluation:
   cross-validation: 5
   k: 5
   topN: 5
-logfile: 'outputs/xiami.log'
-embeddings-opt: True
+results:
+  summarized: 'outputs/results_summarized_xiami.csv'
+  full: 'outputs/results_full_xiami.csv'
 embeddings:
   music2vec: 
-    usage: False
-    path: 'music2vec'
-  doc2vec: 
-    usage: False
-    path: 'doc2vec'
-  glove: 
-    usage: False
-    path: 'glove'
-  seq2seq: 
     usage: True
-    path: 'seq2seq'
+  doc2vec: 
+    usage: True
+  glove: 
+    usage: True
+  rnn: 
+    usage: True
