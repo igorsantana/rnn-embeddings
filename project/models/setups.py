@@ -12,9 +12,8 @@ class Setups():
             for w in c['window']:
                 for n in c['num_units']:
                     for e in c['embedding_dim']:
-                        for b in c['batch']:
                             for ep in c['epochs']:
-                                yield {'window': int(w), 'model': m, 'dim': int(e), 'batch': int(b), 'epochs': int(ep), 'num_units': int(n)}
+                                yield {'window': int(w), 'model': m, 'dim': int(e), 'epochs': int(ep), 'num_units': int(n)}
                             
     def d2v_m2v_setups(self, model):
         c = self.models_config[model]
