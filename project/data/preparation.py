@@ -1,5 +1,6 @@
 
 import pandas as pd
+import random
 import numpy as np
 import pickle
 from os                                 import makedirs
@@ -11,9 +12,15 @@ from sklearn.model_selection            import KFold
 def _rnn_load(path, songs):
     data = pickle.load(open(path, 'rb'))
     emb_dict = {}
-    for song in songs:
-        emb_dict[song] = np.mean(data[song],axis=0)
+    r       = random.choice(list(data.keys()))
+    sample  = data[r]
 
+    if sample.ndim > 1:
+        for song in songs:
+            emb_dict[song] = np.mean(data[song],axis=0)
+    else: 
+        for song in songs:
+            emb_dict[song] = data[song]
     return emb_dict
 
 def __w2v_load(path, songs):
@@ -30,11 +37,18 @@ def __g_load(path, songs):
         emb_dict[song] = glove.word_vectors[glove.dictionary[song]]
     return emb_dict
 
+def __load_exp(path, songs):
+    data = pickle.load(open(path, 'rb'))
+    return data
+
+
 def get_embeddings(path, songs):
     path_arr        = path.split('/')
     session_file    = '/'.join(path_arr[:-1] + ['s' + path_arr[-1]])
     user_file       = path
     
+    if 'experiments' in path:
+        return __load_exp(user_file, songs), __load_exp(session_file, songs)
     if 'glove' in path:
         return __g_load(user_file, songs),__g_load(session_file, songs)
     if 'music2vec' in path:

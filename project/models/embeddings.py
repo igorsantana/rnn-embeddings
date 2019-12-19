@@ -58,12 +58,13 @@ def embeddings(df, conf):
         if method == 'rnn':
             for s in generator:
                 to_str  = setups.setup_to_string(c_id, s, method)
-                batch   = conf['models']['rnn']['batch']
+
                 path    = '{}/{}__{}.pickle'.format(cwd, method, c_id)
                 path_s  = '{}/s{}__{}.pickle'.format(cwd, method, c_id)
 
                 if not exists(path):
-                    user, session = rnn(df, ds, s['model'], s['window'], s['epochs'], batch, s['dim'], s['num_units'])
+                    user, session = rnn(df, ds, s['model'], s['window'], s['epochs'], 
+                                        s['batch'], s['dim'], s['num_units'], s['bidi'])
                     fu = open(path, 'wb')
                     fs = open(path_s, 'wb')
 
@@ -78,10 +79,12 @@ def embeddings(df, conf):
         if method == 'music2vec':
             for s in generator:
                 to_str  = setups.setup_to_string(c_id, s, method)
+
                 path    = '{}/{}__{}.model'.format(cwd, method, c_id)
                 path_s  = '{}/s{}__{}.model'.format(cwd, method, c_id) 
 
                 if not exists(path):
+
                     m2v  = music2vec(df,'user', s['dim'], s['lr'], s['window'], s['down'], s['neg_sample'], s['epochs'])
                     sm2v = music2vec(df,'session', s['dim'], s['lr'], s['window'], s['down'], s['neg_sample'], s['epochs'])
 
@@ -98,6 +101,7 @@ def embeddings(df, conf):
                 path_s  = '{}/s{}__{}.model'.format(cwd, method, c_id) 
 
                 if not exists(path):
+
                     d2v = doc2vec(df,'user_doc', s['dim'], s['lr'], s['window'], s['down'], s['neg_sample'], s['epochs'])
                     sd2v = doc2vec(df,'session_doc', s['dim'], s['lr'], s['window'], s['down'], s['neg_sample'], s['epochs'])
 
@@ -114,11 +118,39 @@ def embeddings(df, conf):
                 path_s  = '{}/s{}__{}.model'.format(cwd, method, c_id) 
 
                 if not exists(path):
+
                     glv = glove(df, 'user', s['window'], s['dim'], s['lr'], s['epochs'])
                     sglv = glove(df, 'session', s['window'], s['dim'], s['lr'], s['epochs'])
-
+                    
                     glv.save(path)
                     sglv.save(path_s)
+
+                c_id+=1
+        if method == 'genres':
+            for s in generator:
+                to_str  = s
+                
+                path    = 'tmp/{}/experiments/'.format(ds)
+                path_s  = 'tmp/{}/experiments/'.format(ds)
+
+                if s == 'add-all':
+                    path    += 'all_genres/add/all_add.pickle'
+                    path_s  += 'all_genres/add/sall_add.pickle'
+                if s == 'mul-all':
+                    path    += 'all_genres/mul/all_mul.pickle'
+                    path_s  += 'all_genres/mul/sall_mul.pickle'
+                if s == 'avg-all':
+                    path    += 'all_genres/avg/all_avg.pickle'
+                    path_s  += 'all_genres/avg/sall_avg.pickle'
+                if s == 'add-ran':
+                    path    += 'random_genres/add/ran_add.pickle'
+                    path_s  += 'random_genres/add/sran_add.pickle'
+                if s == 'mul-ran':
+                    path    += 'random_genres/mul/ran_mul.pickle'
+                    path_s  += 'random_genres/mul/sran_mul.pickle'
+                if s == 'avg-ran':
+                    path    += 'random_genres/avg/ran_avg.pickle'
+                    path_s  += 'random_genres/avg/sran_avg.pickle'
 
                 setups_id.append([c_id, to_str, path])
 

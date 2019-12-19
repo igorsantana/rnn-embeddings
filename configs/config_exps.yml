@@ -1,0 +1,33 @@
+models:
+  music2vec:
+    window: [5]
+    epochs: [10]
+    down_sample: [1e-2]
+    learning_rate: [0.02]
+    embedding_dim: [300]
+    negative_sample: [10]
+  genres:
+    all: ['add', 'mul', 'avg']
+    ran: ['add', 'mul', 'avg']
+session:
+  interval: 60
+evaluation:
+  dataset: 'music2all-freezed'
+  cross-validation: 5
+  k: 5
+  topN: 5
+logfile: 'outputs/music2all-freezed.log'
+results:
+  summarized: 'outputs/results_summarized_music2all-freezed.csv'
+  full: 'outputs/results_full_music2all-freezed.csv'
+embeddings:
+  genres:
+    usage: True
+  music2vec: 
+    usage: True
+  doc2vec: 
+    usage: False
+  glove: 
+    usage: False
+  rnn: 
+    usage: False

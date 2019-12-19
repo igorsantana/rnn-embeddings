@@ -29,18 +29,13 @@ if __name__ == '__main__':
     preprocess(conf)
     
     ds  = conf['evaluation']['dataset']
-    df  = pd.read_csv('dataset/{}/session_listening_history.csv'.format(ds), sep = ',')
-
-    # remove_sessions(df, leq=1)
+    df  = pd.read_csv('dataset/{}/session_listening_history.csv'.format(ds), sep = '\t')
 
     emb_path = 'tmp/{}/models/ids.npy'.format(ds)
     
-    
-    embeddings(df, conf)
-
+    if not exists(emb_path):
+    	embeddings(df, conf)
+        
     ids = np.load(emb_path)
-    
+
     cross_validation(df, conf, ids)
-
-
-
