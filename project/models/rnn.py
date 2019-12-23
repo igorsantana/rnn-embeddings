@@ -52,7 +52,7 @@ def window_seqs(sequence, w_size):
 		x.append(sequence[ix:ix+w_size])
 		y.append([sequence[ix+w_size]])
 		ix+=1
-	return np.vstack(x), np.vstack(y)
+	return x,y
 
 def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BIDIRECTIONAL):
 	pwd 		= 'dataset/{}/'.format(DS)
@@ -117,17 +117,23 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 
 	model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
 	model.summary()
-	model.fit_generator(generator=batch(X_train, y_train, BATCH_SIZE), steps_per_epoch=len(X_train) // BATCH_SIZE,
-											epochs=EPOCHS, validation_data=batch(X_test, y_test, BATCH_SIZE),
-											validation_steps=len(X_test) // BATCH_SIZE,  callbacks=[es])
+	#model.fit_generator(generator=batch(X_train, y_train, BATCH_SIZE), steps_per_epoch=len(X_train) // BATCH_SIZE,
+	#										epochs=EPOCHS, validation_data=batch(X_test, y_test, BATCH_SIZE),
+	#										validation_steps=len(X_test) // BATCH_SIZE,  callbacks=[es])
 
-
-	all_users_playlists 	= df.groupby('user').agg(list)['song'].values
+	#model.save_weights("training_model.h5")
+	#inference.save_weights("inference_model.h5")
+	model.load_weights('training_model.h5')
+	inference.load_weights('inference_model.h5')
+	print('groupby')
+	all_users_playlists 		= df.groupby('user').agg(list)['song'].values
 	all_sessions_playlists 	= df.groupby('session').agg(list)['song'].values
 
 	song_windows        = {}
-
+	print('user song stage 0')
+	xx = 0
 	for song in vocab:
+		print('[{}/{}] Song {} is having its windows processed'.format(xx, vocab_size, song), flush=True, end='\r')
 		if song not in song_windows:
 			song_windows[song] = []
 
@@ -138,30 +144,27 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 				playlist = all_users_playlists[index]
 				for ix in list_indexes:
 					window = get_window(playlist, ix, W_SIZE)
-					if (len(window)) < WINDOW:
-						print('errado {} {}'.format(ix, len(playlist)))
-						#print(playlist)
-					if (len(window)) > WINDOW:
-						print('wtf {} {}'.format(ix, len(playlist)))
-						#print(playlist)
-					#if (len(window)) == WINDOW:
-						#print('correto')
 					song_windows[song].append(window)
+		xx+=1
 
 	user_emb = dict()
-
+	print('user song stage 1')
+	xx = 0
 	for k, occurrences in song_windows.items():
+		print('[{}/{}] Song {} is being predicted'.format(xx, vocab_size, k), flush=True, end='\r')
 		bs = len(occurrences)
 		data = np.array([[song2ix[song] for song in occ] for occ in occurrences])
 		pred = inference.predict(np.array(data), batch_size=bs)[0]
 		if MODEL == 'LSTM':
 			pred = np.mean(pred, axis=0)
-
 		user_emb[k] = pred
+		xx+=1
 
 	song_windows        = {}
-
+	print('session song stage 0')
+	xx = 0
 	for song in vocab:
+		print('[{}/{}] Song {} is having its windows processed'.format(xx, vocab_size, song), flush=True, end='\r')
 		if song not in song_windows:
 			song_windows[song] = []
 
@@ -173,10 +176,13 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 				for ix in list_indexes:
 					window = get_window(playlist, ix, W_SIZE)
 					song_windows[song].append(window)
+		xx+=1
 
 	session_emb = dict()
-
+	print('session song stage 1')
+	xx=0
 	for k, occurrences in song_windows.items():
+		print('[{}/{}] Song {} is being predicted'.format(xx, vocab_size, k), flush=True, end='\r')
 		bs = len(occurrences)
 		data = np.array([[song2ix[song] for song in occ] for occ in occurrences])
 		
@@ -185,8 +191,10 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 		if MODEL == 'LSTM':
 			pred = np.mean(pred, axis=0)
 		session_emb[k] = pred
+		xx+=1
 		
 	return user_emb, session_emb
+
 
 
 
