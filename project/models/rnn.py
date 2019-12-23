@@ -113,7 +113,7 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 	dense       = Dense(vocab_size, activation='softmax')(rec)
 	model       = Model(inputs=input, outputs=dense)
 	inference   = Model(inputs=input, outputs=state)
-	es          = EarlyStopping(monitor='acc', mode='max', verbose=1, patience=3)
+	es          = EarlyStopping(monitor='acc', mode='max', verbose=1, patience=1)
 
 	model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
 	model.summary()
@@ -125,68 +125,57 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 	all_users_playlists 	= df.groupby('user').agg(list)['song'].values
 	all_sessions_playlists 	= df.groupby('session').agg(list)['song'].values
 
-	song_windows        = {}
+	user_windows        = dict()
+	session_windows 	= dict()
+	user_emb 			= dict()
+	session_emb 		= dict()
 
 	for song in vocab:
-		if song not in song_windows:
-			song_windows[song] = []
+		user_windows[song] 		= []
+		session_windows[song] 	= []
 
-		indexes = [[ix for ix, x in enumerate(playlist) if (x == song)] for playlist in all_users_playlists]
-		
-		for index, list_indexes in enumerate(indexes):
-			if len(list_indexes) > 0:
-				playlist = all_users_playlists[index]
-				for ix in list_indexes:
-					window = get_window(playlist, ix, W_SIZE)
-					if (len(window)) < WINDOW:
-						print('errado {} {}'.format(ix, len(playlist)))
-						#print(playlist)
-					if (len(window)) > WINDOW:
-						print('wtf {} {}'.format(ix, len(playlist)))
-						#print(playlist)
-					#if (len(window)) == WINDOW:
-						#print('correto')
-					song_windows[song].append(window)
-
-	user_emb = dict()
-
-	for k, occurrences in song_windows.items():
-		bs = len(occurrences)
-		data = np.array([[song2ix[song] for song in occ] for occ in occurrences])
-		pred = inference.predict(np.array(data), batch_size=bs)[0]
-		if MODEL == 'LSTM':
-			pred = np.mean(pred, axis=0)
-
-		user_emb[k] = pred
-
-	song_windows        = {}
+	k4 = 1
 
 	for song in vocab:
-		if song not in song_windows:
-			song_windows[song] = []
+		print('[{}/{}] Finding the windows of song {}.'.format(k4, vocab_size, ("%.50s" % song)), flush=False, end='\r')
+		k4+=1
+		u_ixes = [[ix for ix, x in enumerate(playlist) if (x == song)] for playlist in all_users_playlists]
+		s_ixes = [[ix for ix, x in enumerate(playlist) if (x == song)] for playlist in all_sessions_playlists]
 
-		indexes = [[ix for ix, x in enumerate(playlist) if (x == song)] for playlist in all_sessions_playlists]
-		
-		for index, list_indexes in enumerate(indexes):
-			if len(list_indexes) > 0:
-				playlist = all_sessions_playlists[index]
-				for ix in list_indexes:
-					window = get_window(playlist, ix, W_SIZE)
-					song_windows[song].append(window)
+		for ix, l_ix in enumerate(u_ixes):
+			if len(l_ix) > 0:
+				playlist 	= all_users_playlists[ix]
+				w 			= [get_window(playlist, i, W_SIZE) for i in l_ix]
+				user_windows[song].extend(w)
+					
+		for ix, l_ix in enumerate(s_ixes):
+			if len(l_ix) > 0:
+				playlist = all_sessions_playlists[ix]
+				w 			= [get_window(playlist, i, W_SIZE) for i in l_ix]
+				session_windows[song].extend(w)
+	k4 = 1
 
-	session_emb = dict()
+	for song in vocab:
+		print('[{}/{}] Predicting the embeddings of song {}.'.format(k4, vocab_size, ("%.50s" % song)), flush=False, end='\r')
+		k4+=1
+		u_occurrences = user_windows[song]
+		s_occurrences = session_windows[song]
 
-	for k, occurrences in song_windows.items():
-		bs = len(occurrences)
-		data = np.array([[song2ix[song] for song in occ] for occ in occurrences])
-		
-		pred = inference.predict(np.array(data), batch_size=bs)[0]
+		u_data 	= np.array([[song2ix[song] for song in occ] for occ in u_occurrences])
+		s_data 	= np.array([[song2ix[song] for song in occ] for occ in s_occurrences])
+
+		u_bs 	= len(u_occurrences)
+		s_bs 	= len(s_occurrences)
+
+		u_pred 	= inference.predict(np.array(u_data), batch_size=u_bs)[0]
+		s_pred 	= inference.predict(np.array(s_data), batch_size=s_bs)[0]
 
 		if MODEL == 'LSTM':
-			pred = np.mean(pred, axis=0)
-		session_emb[k] = pred
-		
+			u_pred = np.mean(u_pred, axis=0)
+			s_pred = np.mean(s_pred, axis=0)
+
+		user_emb[song] 		= u_pred
+		session_emb[song] 	= s_pred
+
 	return user_emb, session_emb
-
-
-
+	
