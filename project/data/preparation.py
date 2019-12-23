@@ -37,11 +37,18 @@ def __g_load(path, songs):
         emb_dict[song] = glove.word_vectors[glove.dictionary[song]]
     return emb_dict
 
+def __load_exp(path, songs):
+    data = pickle.load(open(path, 'rb'))
+    return data
+
+
 def get_embeddings(path, songs):
     path_arr        = path.split('/')
     session_file    = '/'.join(path_arr[:-1] + ['s' + path_arr[-1]])
     user_file       = path
     
+    if 'experiments' in path:
+        return __load_exp(user_file, songs), __load_exp(session_file, songs)
     if 'glove' in path:
         return __g_load(user_file, songs),__g_load(session_file, songs)
     if 'music2vec' in path:
@@ -49,7 +56,6 @@ def get_embeddings(path, songs):
     if 'doc2vec' in path:
         return __w2v_load(user_file, songs), __w2v_load(session_file, songs)
     if 'rnn' in path:
-        print(path)
         return _rnn_load(user_file, songs), _rnn_load(session_file, songs)
     return {},{} 
 

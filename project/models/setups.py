@@ -36,6 +36,12 @@ class Setups():
                     for ep in c['epochs']:
                         yield { 'window': int(w), 'dim': int(dim), 'lr': float(lr), 'epochs': int(ep)}
 
+    def genre_setups(self):
+        c = self.models_config['genres']
+        for a in c['all']:
+            yield '{}-{}'.format(a, 'all')
+        for r in c['ran']:
+            yield '{}-{}'.format(r, 'ran')
     def __return_gen(self, model):
         if model == 'rnn':
             return self.rnn_setups()
@@ -43,6 +49,8 @@ class Setups():
             return self.d2v_m2v_setups(model)
         if model == 'glove':
             return self.glove_setups()
+        if model == 'genres':
+            return self.genre_setups()
 
     def get_generators(self):
         generators = []

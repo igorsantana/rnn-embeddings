@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/home/igor/anaconda3/envs/masters/bin/python",
+    "python.pythonPath": "/home/igorsantana/miniconda3/envs/masters/bin/python",
     "files.exclude": {
         "**/.git": true,
         "**/.svn": true,

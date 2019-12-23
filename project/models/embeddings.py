@@ -125,6 +125,33 @@ def embeddings(df, conf):
                     glv.save(path)
                     sglv.save(path_s)
 
+                c_id+=1
+        if method == 'genres':
+            for s in generator:
+                to_str  = s
+                
+                path    = 'tmp/{}/experiments/'.format(ds)
+                path_s  = 'tmp/{}/experiments/'.format(ds)
+
+                if s == 'add-all':
+                    path    += 'all_genres/add/all_add.pickle'
+                    path_s  += 'all_genres/add/sall_add.pickle'
+                if s == 'mul-all':
+                    path    += 'all_genres/mul/all_mul.pickle'
+                    path_s  += 'all_genres/mul/sall_mul.pickle'
+                if s == 'avg-all':
+                    path    += 'all_genres/avg/all_avg.pickle'
+                    path_s  += 'all_genres/avg/sall_avg.pickle'
+                if s == 'add-ran':
+                    path    += 'random_genres/add/ran_add.pickle'
+                    path_s  += 'random_genres/add/sran_add.pickle'
+                if s == 'mul-ran':
+                    path    += 'random_genres/mul/ran_mul.pickle'
+                    path_s  += 'random_genres/mul/sran_mul.pickle'
+                if s == 'avg-ran':
+                    path    += 'random_genres/avg/ran_avg.pickle'
+                    path_s  += 'random_genres/avg/sran_avg.pickle'
+
                 setups_id.append([c_id, to_str, path])
 
                 c_id+=1
