@@ -5,6 +5,7 @@ from keras.layers                   import Embedding, CuDNNLSTM, Dense, CuDNNGRU
 from keras.models                   import Sequential
 from keras.callbacks                import EarlyStopping
 from keras.preprocessing.sequence   import TimeseriesGenerator
+import concurrent.futures as fut
 import os
 import time
 import numpy        as np
@@ -54,6 +55,24 @@ def window_seqs(sequence, w_size):
 		ix+=1
 	return x, y
 	
+
+def get_song_windows(song, u_playlists, s_playlists, W_SIZE):
+	u_ixes = [[ix for ix, x in enumerate(playlist) if (x == song)] for playlist in u_playlists]
+	s_ixes = [[ix for ix, x in enumerate(playlist) if (x == song)] for playlist in s_playlists]
+	u_windows = []
+	s_windows = []
+	for ix, l_ix in enumerate(u_ixes):
+		if len(l_ix) > 0:
+			playlist 	= u_playlists[ix]
+			w 			= [get_window(playlist, i, W_SIZE) for i in l_ix]
+			u_windows.extend(w)
+				
+	for ix, l_ix in enumerate(s_ixes):
+		if len(l_ix) > 0:
+			playlist = s_playlists[ix]
+			w 			= [get_window(playlist, i, W_SIZE) for i in l_ix]
+			s_windows.extend(w)
+	return u_windows, s_windows
 
 def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BIDIRECTIONAL):
 	pwd 		= 'dataset/{}/'.format(DS)
@@ -122,9 +141,10 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 											validation_steps=len(X_test) // BATCH_SIZE,  callbacks=[es])
 
 
-	all_users_playlists 	= df.groupby('user').agg(list)['song'].values
-	all_sessions_playlists 	= df.groupby('session').agg(list)['song'].values
-
+	u_playlists 	= df.groupby('user').agg(list)['song'].values
+	s_playlists 	= df.groupby('session').agg(list)['song'].values
+	nou_playlists 	= len(u_playlists)
+	nos_playlists 	= len(s_playlists)
 	user_windows        = dict()
 	session_windows 	= dict()
 	user_emb 			= dict()
@@ -135,28 +155,26 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 		session_windows[song] 	= []
 
 	k4 = 1
-
-	for song in vocab:
-		print('[{}/{}] Finding the windows of song {}.'.format(k4, vocab_size, ("%.50s" % song)), flush=False, end='\r')
+	for pl in u_playlists:
+		print('[{}/{}] [USER] Playlist'.format(k4, nou_playlists), flush=False, end='\r')
 		k4+=1
-		u_ixes = [[ix for ix, x in enumerate(playlist) if (x == song)] for playlist in all_users_playlists]
-		s_ixes = [[ix for ix, x in enumerate(playlist) if (x == song)] for playlist in all_sessions_playlists]
-
-		for ix, l_ix in enumerate(u_ixes):
-			if len(l_ix) > 0:
-				playlist 	= all_users_playlists[ix]
-				w 			= [get_window(playlist, i, W_SIZE) for i in l_ix]
-				user_windows[song].extend(w)
-					
-		for ix, l_ix in enumerate(s_ixes):
-			if len(l_ix) > 0:
-				playlist = all_sessions_playlists[ix]
-				w 			= [get_window(playlist, i, W_SIZE) for i in l_ix]
-				session_windows[song].extend(w)
+		ixes 		= range(0, len(pl))
+		s_windows 	= [(pl[ix], get_window(pl, ix, W_SIZE)) for ix in ixes]
+		for song, window in s_windows:
+			user_windows[song].append(window)
+	print()
 	k4 = 1
-
+	for pl in s_playlists:
+		print('[{}/{}] [SESSION] Playlist'.format(k4, nos_playlists), flush=False, end='\r')
+		k4+=1
+		ixes 		= range(0, len(pl))
+		s_windows 	= [(pl[ix], get_window(pl, ix, W_SIZE)) for ix in ixes]
+		for song, window in s_windows:
+			session_windows[song].append(window)
+	print()
+	k4 = 1
 	for song in vocab:
-		print('[{}/{}] Predicting the embeddings of song {}.'.format(k4, vocab_size, ("%.50s" % song)), flush=False, end='\r')
+		print('[{}/{}] Predicting the embeddings of song {}.'.format(k4, vocab_size, ("%.100s" % song)), flush=False, end='\r')
 		k4+=1
 		u_occurrences = user_windows[song]
 		s_occurrences = session_windows[song]
@@ -176,6 +194,7 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 
 		user_emb[song] 		= u_pred
 		session_emb[song] 	= s_pred
-
+	print()
 	return user_emb, session_emb
+	
 	
