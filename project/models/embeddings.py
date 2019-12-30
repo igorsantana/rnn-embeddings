@@ -58,6 +58,7 @@ def embeddings(df, conf):
         if method == 'rnn':
             for s in generator:
                 to_str  = setups.setup_to_string(c_id, s, method)
+                print(to_str)
 
                 path    = '{}/{}__{}.pickle'.format(cwd, method, c_id)
                 path_s  = '{}/s{}__{}.pickle'.format(cwd, method, c_id)
@@ -79,6 +80,7 @@ def embeddings(df, conf):
         if method == 'music2vec':
             for s in generator:
                 to_str  = setups.setup_to_string(c_id, s, method)
+                print(to_str)
 
                 path    = '{}/{}__{}.model'.format(cwd, method, c_id)
                 path_s  = '{}/s{}__{}.model'.format(cwd, method, c_id) 
@@ -99,6 +101,7 @@ def embeddings(df, conf):
                 to_str  = setups.setup_to_string(c_id, s, method)
                 path    = '{}/{}__{}.model'.format(cwd, method, c_id)
                 path_s  = '{}/s{}__{}.model'.format(cwd, method, c_id) 
+                print(to_str)
 
                 if not exists(path):
 
@@ -116,6 +119,7 @@ def embeddings(df, conf):
                 to_str  = setups.setup_to_string(c_id, s, method)
                 path    = '{}/{}__{}.model'.format(cwd, method, c_id)
                 path_s  = '{}/s{}__{}.model'.format(cwd, method, c_id) 
+                print(to_str)
 
                 if not exists(path):
 
@@ -129,7 +133,7 @@ def embeddings(df, conf):
         if method == 'genres':
             for s in generator:
                 to_str  = s
-                
+                print(to_str)
                 path    = 'tmp/{}/experiments/'.format(ds)
                 path_s  = 'tmp/{}/experiments/'.format(ds)
 

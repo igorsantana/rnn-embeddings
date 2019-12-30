@@ -2,13 +2,22 @@ import os
 import sys
 import time
 import yaml
+import pickle
 import multiprocessing                      as mp
 import numpy                                as np
 from project.evaluation.metrics             import get_metrics
 from datetime                               import datetime
 from sklearn.metrics.pairwise               import cosine_similarity
 
-def execute_algo(train, test, songs, topN, k_sim, data):
+def write_rec(pwd, sessions):
+    f = open(pwd, 'wb')
+    pickle.dump(sessions, f, protocol=pickle.HIGHEST_PROTOCOL)
+    f.close()
+
+def recs(session ,original, mtn_rec, smtn_rec, csmtn_rec, csmuk_rec):
+    return ({ 'session': session, 'original': original, 'mtn_rec': mtn_rec.tolist(), 'smtn_rec': smtn_rec.tolist(), 'csmtn_rec': csmtn_rec.tolist(),  'csmuk_rec': csmtn_rec.tolist()})
+
+def execute_algo(train, test, songs, topN, k_sim, data, pwd):
 
     m2vTN   = []
     sm2vTN  = []
@@ -39,18 +48,24 @@ def execute_algo(train, test, songs, topN, k_sim, data):
 
     for user in test:
         sessions = data.user_sessions(user)
-        user_cos = cosine_similarity(data.u_pref(user).reshape(1, -1), data.m2v_songs)[0]
+
+        user_cos = cosine_similarity(data.u_pref(user).reshape(1, -1), data.m2v_songs, )[0]
         user_tn  = data.get_n_largest(user_cos, topN)
+
+        f = open(pwd + '/' + user, 'wb')
+        pickle.dump({}, f, protocol=pickle.HIGHEST_PROTOCOL)
+        f.close()
 
         print(rep(u, user, 'M-TN'), flush=False, end='\r')
 
         sim_ix   = np.argpartition(users[data.ix_user(user)], -k_sim)[-k_sim:]
         song_sim = np.array([pref(data.ix_user(user), sim_ix, s) for s in songs.index.values])
-
+        to_write = []
+        s = 1
         for (train_songs, test_songs) in sessions:
             if len(train_songs) > 0:
                 c_pref  = data.c_pref(train_songs)
-
+                
                 con_cos = cosine_similarity(c_pref.reshape(1, -1), data.sm2v_songs)[0]
                 print(rep(u, user, 'SM-TN'), flush=False, end='\r')
                 f_cos   = np.sum([user_cos, con_cos], axis=0)
@@ -61,18 +76,18 @@ def execute_algo(train, test, songs, topN, k_sim, data):
                 
                 both_tn = data.get_n_largest(f_cos, topN)
                 uk_tn   = data.get_n_largest(UK_cos, topN)
-
+                to_write.append(recs(s, test_songs, user_tn, cos_tn, both_tn, uk_tn))
                 m2vTN.append(get_metrics(user_tn, test_songs))
                 sm2vTN.append(get_metrics(cos_tn, test_songs))
                 csm2vTN.append(get_metrics(both_tn, test_songs))
                 csm2vUK.append(get_metrics(uk_tn, test_songs))
+                s+=1
         
+        write_rec(pwd + '/' + user, to_write)
         u+=1
 
     m_m2vTN     = np.mean(m2vTN, axis=0).tolist()
     m_sm2vTN    = np.mean(sm2vTN, axis=0).tolist()
     m_csm2vTN   = np.mean(csm2vTN, axis=0).tolist()
     m_csm2vUK   = np.mean(csm2vUK, axis=0).tolist()
-
     return (m_m2vTN, m_sm2vTN, m_csm2vTN, m_csm2vUK)
-
