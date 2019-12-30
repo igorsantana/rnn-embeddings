@@ -21,7 +21,6 @@ def cross_validation(df, conf, setups):
 	topN			= int(params['topN'])
 	k				= int(params['k'])
 	results 		= Results(setups, k)
-	
 	for setup in setups:
 		_, params, path	= setup
 
