@@ -33,16 +33,27 @@ class Results():
                                         'csm2vTN': AlgoMetrics('csm2vTN', params), 'csm2vUK': AlgoMetrics('csm2vUK', params)}
         self.final_df = pd.DataFrame()
         
-    def fold_results(self, params, m2vTN, sm2vTN, csm2vTN, csm2vUK):
+    def fold_results(self, params, m2vTN, sm2vTN, csm2vTN, csm2vUK, fold):
         self.metrics[params]['m2vTN'].add(m2vTN)
         self.metrics[params]['sm2vTN'].add(sm2vTN)
         self.metrics[params]['csm2vTN'].add(csm2vTN)
         self.metrics[params]['csm2vUK'].add(csm2vUK)
-        return True
+        metrics = np.vstack([m2vTN, sm2vTN, csm2vTN, csm2vUK])
+        print()
+        data = {    
+            'params': [params] * 4,
+            'algo': ['m2vTN','sm2vTN','csm2vTN','csm2vUK'],
+            'folds':[fold] * 4,
+            'prec': metrics[:,0],
+            'rec': metrics[:,1],
+            'f1': metrics[:,2]
+        }
+        df = pd.DataFrame(data)
+        return df
     
     def get_results(self, params):
         results = self.metrics[params]
-        finals = []
+        finals  = []
         for algo in ['m2vTN', 'sm2vTN', 'csm2vTN', 'csm2vUK']:
             data = {    'algo'  : [algo] * (self.k + 2),
                         'folds' : [str(x) for x in range(1, self.k + 1)] + ['mean', 'std'],
