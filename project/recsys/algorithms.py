@@ -52,7 +52,7 @@ def execute_algo(train, test, songs, topN, k_sim, data, pwd):
         user_cos = cosine_similarity(data.u_pref(user).reshape(1, -1), data.m2v_songs, )[0]
         user_tn  = data.get_n_largest(user_cos, topN)
 
-        f = open(pwd + '/' + user, 'wb')
+        f = open(pwd + '/' + user.replace('/', '_'), 'wb')
         pickle.dump({}, f, protocol=pickle.HIGHEST_PROTOCOL)
         f.close()
 
@@ -83,7 +83,7 @@ def execute_algo(train, test, songs, topN, k_sim, data, pwd):
                 csm2vUK.append(get_metrics(uk_tn, test_songs))
                 s+=1
         
-        write_rec(pwd + '/' + user, to_write)
+        write_rec(pwd + '/' + user.replace('/', '_'), to_write)
         u+=1
 
     m_m2vTN     = np.mean(m2vTN, axis=0).tolist()

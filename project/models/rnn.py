@@ -111,21 +111,21 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 		state       = [state_c, state_h]
 
 	dense       = Dense(vocab_size, activation='softmax')(rec)
-	model       = Model(inputs=input, outputs=dense)
+	#model       = Model(inputs=input, outputs=dense)
 	inference   = Model(inputs=input, outputs=state)
 	es          = EarlyStopping(monitor='acc', mode='max', verbose=1, patience=3)
 
-	model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-	model.summary()
-	model.fit_generator(generator=batch(X_train, y_train, BATCH_SIZE), steps_per_epoch=len(X_train) // BATCH_SIZE,
-											epochs=EPOCHS, validation_data=batch(X_test, y_test, BATCH_SIZE),
-											validation_steps=len(X_test) // BATCH_SIZE,  callbacks=[es])
+	#model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+	inference.summary()
+	#model.fit_generator(generator=batch(X_train, y_train, BATCH_SIZE), steps_per_epoch=len(X_train) // BATCH_SIZE,
+											#epochs=EPOCHS, validation_data=batch(X_test, y_test, BATCH_SIZE),
+											#validation_steps=len(X_test) // BATCH_SIZE,  callbacks=[es])
 
-	model.save_weights("training_model.h5")
-	inference.save_weights("inference_model.h5")
+	#model.save_weights("training_model.h5")
+	#inference.save_weights("inference_model.h5")
 	
 	#model.load_weights('training_model.h5')
-	#inference.load_weights('inference_model.h5')
+	inference.load_weights('inference_model.h5')
 	print('groupby')
 	u_playlists 	= df.groupby('user').agg(list)['song'].values
 	s_playlists 	= df.groupby('session').agg(list)['song'].values
