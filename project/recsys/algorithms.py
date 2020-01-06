@@ -9,6 +9,7 @@ from project.evaluation.metrics             import get_metrics
 from datetime                               import datetime
 from sklearn.metrics.pairwise               import cosine_similarity
 
+
 def write_rec(pwd, sessions):
     f = open(pwd, 'wb')
     pickle.dump(sessions, f, protocol=pickle.HIGHEST_PROTOCOL)
@@ -17,12 +18,28 @@ def write_rec(pwd, sessions):
 def recs(session ,original, mtn_rec, smtn_rec, csmtn_rec, csmuk_rec):
     return ({ 'session': session, 'original': original, 'mtn_rec': mtn_rec.tolist(), 'smtn_rec': smtn_rec.tolist(), 'csmtn_rec': csmtn_rec.tolist(),  'csmuk_rec': csmtn_rec.tolist()})
 
-def execute_algo(train, test, songs, topN, k_sim, data, pwd):
+
+def rnn_get_topN(train_songs, topN, rnn, song2ix):
+    recommendations = []
+    ix2song         = {v: k for k, v in song2ix.items()}
+    train_songs_ix  = [song2ix[songs] for songs in train_songs]
+    while len(recommendations) < topN:
+        rec = rnn.predict(np.array([train_songs_ix[-5:]]), batch_size=1)
+        value = np.argmax(rec)
+        # print('[{}\t{}\t{}\t{}\t{}] REC: {}'.format(train_songs_ix[-5:][0], train_songs_ix[-5:][1], train_songs_ix[-5:][2], train_songs_ix[-5:][3], train_songs_ix[-5:][4], value))
+        recommendations.append(value)
+        train_songs_ix.append(value)
+
+    return [ix2song[song] for song in recommendations]
+
+
+def execute_algo(train, test, songs, topN, k_sim, data, pwd, rnn, song2ix):
 
     m2vTN   = []
     sm2vTN  = []
     csm2vTN = [] 
     csm2vUK = []
+    rnnTN   = []
     
     u_songs  = data.us_matrix()
     users    = data.uu_matrix()
@@ -65,7 +82,9 @@ def execute_algo(train, test, songs, topN, k_sim, data, pwd):
         for (train_songs, test_songs) in sessions:
             if len(train_songs) > 0:
                 c_pref  = data.c_pref(train_songs)
-                
+                print(rep(u, user, 'RNN-TN'), flush=False, end='\r')
+                rnn_tn  = rnn_get_topN(train_songs, topN, rnn, song2ix)
+
                 con_cos = cosine_similarity(c_pref.reshape(1, -1), data.sm2v_songs)[0]
                 print(rep(u, user, 'SM-TN'), flush=False, end='\r')
                 f_cos   = np.sum([user_cos, con_cos], axis=0)
@@ -81,6 +100,7 @@ def execute_algo(train, test, songs, topN, k_sim, data, pwd):
                 sm2vTN.append(get_metrics(cos_tn, test_songs))
                 csm2vTN.append(get_metrics(both_tn, test_songs))
                 csm2vUK.append(get_metrics(uk_tn, test_songs))
+                rnnTN.append(get_metrics(rnn_tn, test_songs))
                 s+=1
         
         write_rec(pwd + '/' + user, to_write)
@@ -90,4 +110,5 @@ def execute_algo(train, test, songs, topN, k_sim, data, pwd):
     m_sm2vTN    = np.mean(sm2vTN, axis=0).tolist()
     m_csm2vTN   = np.mean(csm2vTN, axis=0).tolist()
     m_csm2vUK   = np.mean(csm2vUK, axis=0).tolist()
-    return (m_m2vTN, m_sm2vTN, m_csm2vTN, m_csm2vUK)
+    m_rnnTN     = np.mean(rnnTN, axis=0).tolist()
+    return (m_m2vTN, m_sm2vTN, m_csm2vTN, m_csm2vUK, m_rnnTN)

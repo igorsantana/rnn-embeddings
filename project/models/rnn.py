@@ -7,6 +7,7 @@ from keras.callbacks                import EarlyStopping
 from keras.preprocessing.sequence   import TimeseriesGenerator
 import concurrent.futures as fut
 import os
+import pickle
 import time
 import numpy        as np
 import pickle       as pk
@@ -78,6 +79,7 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 	vocab           = sorted(set(full))
 	vocab_size      = len(vocab)
 	song2ix         = {u:i for i, u in enumerate(vocab)}
+	pickle.dump(song2ix, open('song2ix.pickle', 'wb'), pickle.HIGHEST_PROTOCOL)
 	sequences       = []
 
 	for seq, target in zip(sessions, targets):
@@ -88,7 +90,6 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 	sequences   = np.array(sequences)
 	np.random.shuffle(sequences)
 	X, Y        = np.stack(sequences[:,0], axis=0), np.stack(sequences[:,1], axis=0)
-
 	X_train, X_test = X[int(len(X) *.1):], X[:int(len(X) *.1)]
 	y_train, y_test = Y[int(len(Y) *.1):], Y[:int(len(Y) *.1)]
 
@@ -99,8 +100,8 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 				target = y[ix:ix+bs]
 				yield input, to_categorical(target, num_classes=vocab_size)
 
-	input       = Input(shape=(WINDOW,))
-	embedding   = Embedding(input_dim=vocab_size, output_dim= EMBEDDING_DIM, input_length= WINDOW)(input)
+	input       = Input(shape=(None,))
+	embedding   = Embedding(input_dim=vocab_size, output_dim= EMBEDDING_DIM, input_length=None)(input)
 
 	if MODEL == 'GRU':
 		rec, state  = CuDNNGRU(NUM_UNITS, return_state=True)(embedding)
@@ -113,32 +114,39 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 	dense       = Dense(vocab_size, activation='softmax')(rec)
 	model       = Model(inputs=input, outputs=dense)
 	inference   = Model(inputs=input, outputs=state)
-	es          = EarlyStopping(monitor='acc', mode='max', verbose=1, patience=3)
+	es          = EarlyStopping(monitor='acc', mode='max', verbose=1, patience=5)
 
 	model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-	model.summary()
-	model.fit_generator(generator=batch(X_train, y_train, BATCH_SIZE), steps_per_epoch=len(X_train) // BATCH_SIZE,
-											epochs=EPOCHS, validation_data=batch(X_test, y_test, BATCH_SIZE),
-											validation_steps=len(X_test) // BATCH_SIZE,  callbacks=[es])
-
-	model.save_weights("training_model.h5")
-	inference.save_weights("inference_model.h5")
+	inference.summary()
+	# model.fit_generator(generator=batch(X_train, y_train, BATCH_SIZE), steps_per_epoch=len(X_train) // BATCH_SIZE,
+	# 										epochs=EPOCHS, validation_data=batch(X_test, y_test, BATCH_SIZE),
+	# 										validation_steps=len(X_test) // BATCH_SIZE,  callbacks=[es])
 	
-	#model.load_weights('training_model.h5')
-	#inference.load_weights('inference_model.h5')
+
+	f = open('training_model.yaml', "w")
+	f.write(model.to_yaml())
+	f.close()
+	# model.save_weights('training_weights.h5')
+	# inference.save_weights("inference_model.h5")
+	
+	# model.load_weights('training_model.h5')
+	# inference.load_weights('inference_model.h5')
 	print('groupby')
-	u_playlists 	= df.groupby('user').agg(list)['song'].values
-	s_playlists 	= df.groupby('session').agg(list)['song'].values
+	u_playlists 	= df[['user', 'song']].groupby('user').agg(tuple)['song'].values
+	u_playlists		= [list(p) for p in u_playlists]
+	s_playlists 	= df[['session', 'song']].groupby('session').agg(tuple)['song'].values
+	s_playlists		= [list(p) for p in s_playlists]
+
 	nou_playlists 	= len(u_playlists)
 	nos_playlists 	= len(s_playlists)
 
 	user_windows        = dict()
-	session_windows 		= dict()
-	user_emb 						= dict()
-	session_emb 				= dict()
+	session_windows 	= dict()
+	user_emb 			= dict()
+	session_emb 		= dict()
 
 	for song in vocab:
-		user_windows[song] 			= []
+		user_windows[song] 		= []
 		session_windows[song] 	= []
 
 	k4 = 1
@@ -172,8 +180,26 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 		u_bs 	= len(u_occurrences)
 		s_bs 	= len(s_occurrences)
 
-		u_pred 	= inference.predict(np.array(u_data), batch_size=u_bs)[0]
-		s_pred 	= inference.predict(np.array(s_data), batch_size=s_bs)[0]
+		u_pred = np.zeros((1, NUM_UNITS))
+		s_pred = np.zeros((1, NUM_UNITS))
+		if u_bs > BATCH_SIZE:
+			u_splits = np.array_split(u_data, u_bs //	BATCH_SIZE)
+			s_splits = np.array_split(s_data, s_bs // 	BATCH_SIZE)
+
+			for split in u_splits:
+				pred 	= inference.predict(np.array(split), batch_size=(u_bs // BATCH_SIZE))[0]
+				u_pred 	= np.append(u_pred, pred, axis=0)
+
+			for split in s_splits:
+				pred 	= inference.predict(np.array(split), batch_size=(s_bs // BATCH_SIZE))[0]
+				s_pred 	= np.append(s_pred, pred, axis=0)
+		
+			u_pred = np.delete(u_pred, (0), axis=0)
+			s_pred = np.delete(s_pred, (0), axis=0)
+
+		else: 
+			u_pred 	= inference.predict(np.array(u_data), batch_size=u_bs)[0]
+			s_pred 	= inference.predict(np.array(s_data), batch_size=s_bs)[0]
 
 		if MODEL == 'LSTM':
 			u_pred = np.mean(u_pred, axis=0)
@@ -183,3 +209,5 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 		session_emb[song] 	= s_pred
 	print()
 	return user_emb, session_emb
+
+
