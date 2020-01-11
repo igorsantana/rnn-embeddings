@@ -1,7 +1,7 @@
 from os.path                        import exists
 from keras.utils                    import to_categorical
 from keras.models                   import Model
-from keras.layers                   import Embedding, CuDNNLSTM, Dense, CuDNNGRU, SimpleRNN, Input, Bidirectional
+from keras.layers                   import Embedding, CuDNNLSTM, Dense, CuDNNGRU, SimpleRNN, Input, Bidirectional, Concatenate, TimeDistributed, Dropout
 from keras.models                   import Sequential
 from keras.callbacks                import EarlyStopping
 from keras.preprocessing.sequence   import TimeseriesGenerator
@@ -98,36 +98,46 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 			for ix in range(0, len(X), bs):
 				input  = X[ix:ix+bs]
 				target = y[ix:ix+bs]
-				yield input, to_categorical(target, num_classes=vocab_size)
+				yield input.reshape((BATCH_SIZE,WINDOW, 1)), to_categorical(target, num_classes=vocab_size)
 
-	input       = Input(shape=(None,))
-	embedding   = Embedding(input_dim=vocab_size, output_dim= EMBEDDING_DIM, input_length=None)(input)
+	# input       = Input(shape=(BATCH_SIZE, WINDOW))
+	# embedding   = Embedding(input_dim=vocab_size, output_dim= EMBEDDING_DIM, input_length=None)(input)
 
-	if MODEL == 'GRU':
-		rec, state  = CuDNNGRU(NUM_UNITS, return_state=True)(embedding)
-	if MODEL == 'RNN':
-		rec, state  = SimpleRNN(NUM_UNITS, return_state=True)(embedding)
-	if MODEL == 'LSTM':
-		rec, state_c, state_h  = CuDNNLSTM(NUM_UNITS, return_state=True)(embedding)
-		state       = [state_c, state_h]
+	# if MODEL == 'GRU':
+	# 	rec, state  = CuDNNGRU(NUM_UNITS, return_state=True)(embedding)
+	# if MODEL == 'RNN':
+	# 	rec, state  = SimpleRNN(NUM_UNITS, return_state=True)(embedding)
+	# if MODEL == 'LSTM':
+		# rec, state_c, state_h 		= CuDNNLSTM(NUM_UNITS, return_state=True)(input)
+		# state       				= [state_c, state_h]
+		# rec, fw_h, fw_c, bw_h, bw_c = Bidirectional(CuDNNLSTM(NUM_UNITS, return_state=True))(embedding)
+		# state 						= [Concatenate()([fw_c, bw_c]), Concatenate()([fw_h, bw_h])]
 
-	dense       = Dense(vocab_size, activation='softmax')(rec)
+
+	input 			= Input(batch_shape=(BATCH_SIZE, WINDOW, 1), name='Entrada')
+	rec				= CuDNNLSTM(NUM_UNITS, return_sequences=True, stateful=True, name='LSTM1')(input)
+	drop 			= Dropout(0.2, name='Dropout')(rec)
+	rec_2, s_c, s_h	= CuDNNLSTM(NUM_UNITS // 2, return_state=True, stateful=True, name='LSTM2')(drop)
+	state       	= [s_c, s_h]
+	dense       	= Dense(vocab_size, activation='softmax', name='Densa')(rec_2)
+
 	model       = Model(inputs=input, outputs=dense)
 	inference   = Model(inputs=input, outputs=state)
 	es          = EarlyStopping(monitor='acc', mode='max', verbose=1, patience=5)
 
 	model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-	inference.summary()
-	# model.fit_generator(generator=batch(X_train, y_train, BATCH_SIZE), steps_per_epoch=len(X_train) // BATCH_SIZE,
-	# 										epochs=EPOCHS, validation_data=batch(X_test, y_test, BATCH_SIZE),
-	# 										validation_steps=len(X_test) // BATCH_SIZE,  callbacks=[es])
+	model.summary()
+	# inference.summary()
+	model.fit_generator(generator=batch(X_train, y_train, BATCH_SIZE), steps_per_epoch=len(X_train) // BATCH_SIZE,
+											epochs=EPOCHS, validation_data=batch(X_test, y_test, BATCH_SIZE),
+											validation_steps=len(X_test) // BATCH_SIZE,  callbacks=[es])
 	
 
 	f = open('training_model.yaml', "w")
 	f.write(model.to_yaml())
 	f.close()
-	# model.save_weights('training_weights.h5')
-	# inference.save_weights("inference_model.h5")
+	model.save_weights('training_weights.h5')
+	inference.save_weights('inference_weights.h5')
 	
 	# model.load_weights('training_model.h5')
 	# inference.load_weights('inference_model.h5')
