@@ -61,8 +61,6 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 	sequences   = np.array(sequences).ravel().astype(str)
 	WINDOW 		= W_SIZE * 2
 
-
-
 	x, y = window_seqs(sequences, WINDOW)
 	if not exists(pwd + 'sessions_{}.txt'.format(W_SIZE)):
 		f  = open(pwd + 'sessions_{}.txt'.format(W_SIZE), mode='w+')
