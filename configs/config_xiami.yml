@@ -38,10 +38,10 @@ results:
   full: 'outputs/results_full_xiami.csv'
 embeddings:
   music2vec: 
-    usage: True
+    usage: False
   doc2vec: 
-    usage: True
+    usage: False
   glove: 
-    usage: True
+    usage: False
   rnn: 
     usage: True

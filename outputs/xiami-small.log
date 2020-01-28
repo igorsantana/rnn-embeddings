@@ -1,5 +1,0 @@
-04/Oct/2019 10:49:43 - Config file config_rnn.yml read
-04/Oct/2019 10:49:43 - Project running in (opt) mode
-04/Oct/2019 10:49:43 - Pre-process started for dataset "xiami-small"
-04/Oct/2019 10:49:43 - The "xiami-small" dataset is already sessionized
-04/Oct/2019 10:49:43 - RNN models will be generated at "tmp/xiami-small/models/"

@@ -4,3 +4,9 @@ tmp/*
 **/*.cpython-37.pyc
 .ipynb_checkpoints/*
 .history
+.vscode
+tmp
+project/data/__pycache__/*.pyc
+project/evaluation/__pycache__/*.pyc
+project/recsys/__pycache__/*.pyc
+project/__pycache__/*.pyc

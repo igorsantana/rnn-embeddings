@@ -1,23 +1,31 @@
 models:
+  rnn:
+    embedding_dim: [256]
+    batch: 512
+    epochs: [100]
+    model: ['LSTM']
+    window: [5]
+    bi: [False]
+    num_units: [512]
   music2vec:
-    window_size: [20]
-    vector_dim: [50]
-    learning_rate: [0.015]
-    epochs: [10]
-    down_sample: [1e-4]
-    negative_sample: [10]
+    window: [5]
+    epochs: [5]
+    down_sample: [1e-3]
+    learning_rate: [0.025]
+    embedding_dim: [300]
+    negative_sample: [20]
   doc2vec:
-    window_size: [20]
-    vector_dim: [50]
-    learning_rate: [0.035]
+    window: [10]
     epochs: [10]
     down_sample: [1e-4]
+    learning_rate: [0.025]
+    embedding_dim: [50]
     negative_sample: [10]
   glove:
-    window_size: [10]
-    vector_dim: [100]
-    learning_rate: [0.025]
+    window: [10]
+    embedding_dim: [100]
     epochs: [15]
+    learning_rate: [0.025]
 session:
   interval: 60
 evaluation:
@@ -25,18 +33,15 @@ evaluation:
   cross-validation: 5
   k: 5
   topN: 5
-logfile: 'outputs/music2all.log'
-embeddings-opt: True
+results:
+  summarized: 'outputs/results_summarized_music2all.csv'
+  full: 'outputs/results_full_music2all.csv'
 embeddings:
   music2vec: 
-    usage: True
-    path: 'music2vec'
+    usage: False
   doc2vec: 
-    usage: True
-    path: 'doc2vec'
+    usage: False
   glove: 
     usage: False
-    path: 'glove'
-  seq2seq: 
-    usage: False
-    path: 'seq2seq'
+  rnn: 
+    usage: True

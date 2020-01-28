@@ -12,15 +12,8 @@ from sklearn.model_selection            import KFold
 def _rnn_load(path, songs):
     data = pickle.load(open(path, 'rb'))
     emb_dict = {}
-    r       = random.choice(list(data.keys()))
-    sample  = data[r]
-
-    if sample.ndim > 1:
-        for song in songs:
-            emb_dict[song] = np.mean(data[song],axis=0)
-    else: 
-        for song in songs:
-            emb_dict[song] = data[song]
+    for song in songs:
+        emb_dict[song] = data[song]
     return emb_dict
 
 def __w2v_load(path, songs):
