@@ -42,7 +42,7 @@ def cross_validation(df, conf, setups):
 	if not exists(pwd_rec):
 		os.mkdir(pwd_rec)
 	if not exists(exec_path):
-		pd.DataFrame({},columns=['params','algo','folds','prec','rec','f1']).to_csv(exec_path,index=None,sep='\t')
+		pd.DataFrame({},columns=['params','algo','folds','prec','rec','f1','map','ndcg@5','p@5']).to_csv(exec_path,index=None,sep='\t')
 
 	executed = pd.read_csv(exec_path, sep='\t')
 
@@ -64,7 +64,6 @@ def cross_validation(df, conf, setups):
 			print('%s | fold-%d | Running recsys w/ k-fold with the following params: %s' % (time, fold, params))
 			helper 	= Helper(train, test, songs, dataset)
 			m2vTN, sm2vTN, csm2vTN, csm2vUK = execute_algo(train.index, test.index, songs, topN, k, helper, pwd_rec + params)
-			res 							= results.fold_results(params, m2vTN, sm2vTN, csm2vTN, csm2vUK, csm2vUK, fold)
-
+			res 							= results.fold_results(params, m2vTN, sm2vTN, csm2vTN, csm2vUK, fold)
 			res.to_csv(exec_path, sep='\t', mode='a', index=None, header=None)
 			fold+=1
