@@ -17,7 +17,7 @@ def remove_sessions(df, leq=1):
 
 
 def sessionize_user(ds, session_time, s_path):
-    df              = pd.read_csv('dataset/{}/listening_history.csv'.format(ds), sep = '\t')
+    df              = pd.read_csv('dataset/{}/listening_history.csv'.format(ds), sep = ',')
     df['timestamp'] = df['timestamp'].astype('datetime64')
     df['dif']       = df['timestamp'].diff()
     df['session']   = df.apply(lambda x: 'NEW_SESSION' if x.dif >= timedelta(minutes=session_time) else 'SAME_SESSION', axis=1)

@@ -1,14 +1,15 @@
 from os.path                        import exists
 from keras.utils                    import to_categorical
 from keras.models                   import Model
-from keras.layers                   import Embedding, LSTM, Dense, CuDNNGRU, SimpleRNN, Input, Bidirectional, Dropout, Concatenate
+from keras.layers                   import Embedding, LSTM, Dense, CuDNNGRU, LSTM, Input, Bidirectional, Dropout, Concatenate, Bidirectional
 from keras.models                   import Sequential, load_model
 from keras.callbacks                import EarlyStopping, ModelCheckpoint
-from keras.utils 										import plot_model
-
+from keras.utils 					import plot_model
+from keras.utils 					import multi_gpu_model
 from keras.preprocessing.sequence   import TimeseriesGenerator
 import concurrent.futures as fut
 import os
+import gc
 import keras
 import pickle
 import time
@@ -63,26 +64,13 @@ def window_seqs(sequence, w_size):
 
 def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BIDIRECTIONAL):
 	pwd 		= 'dataset/{}/'.format(DS)
-	# sequences   = df.song.values.tolist()
-	# sequences   = np.array(sequences).ravel().astype(str)
 	WINDOW 		= W_SIZE * 2
-	# x, y = window_seqs(sequences, WINDOW)
-	# if not exists(pwd + 'sessions_{}.txt'.format(W_SIZE)):
-	# 	f  = open(pwd + 'sessions_{}.txt'.format(W_SIZE), mode='w+')
-	# 	for seq, target in zip(x, y):
-	# 		print(';'.join(seq) + '\t' + target[0], file=f)
-	# 	f.close()
-	# sessions        = open(pwd + 'sessions_{}.txt'.format(W_SIZE)).readlines()
-	# sessions        = [session.replace('\n', '').split('\t') for session in sessions]
-	# sessions        = [data[0].split(';') for data in sessions]
-	# targets         = [data[1] for data in sessions]
-	# full            = [j for i in (sessions) for j in i]
-	# full            = full + targets
+
 	vocab           = sorted(set(df.song.unique().tolist()))
 	vocab_size      = len(vocab) +1
 	song2ix         = {u:i for i, u in enumerate(vocab, 1)}
 	pickle.dump(song2ix, open('{}_song2ix.pickle'.format(DS), 'wb'), pickle.HIGHEST_PROTOCOL)
-	# sequences       = []
+	
 	
 	if not exists(pwd + 'song_context_{}.txt'.format(W_SIZE)):
 		df['song'] 		= df.song.apply(lambda song: song2ix[song])
@@ -94,10 +82,8 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 		nou_playlists 	= len(u_playlists)
 		nos_playlists 	= len(s_playlists)
 
-		user_windows       = dict()
+		user_windows       	= dict()
 		session_windows 	= dict()
-		# user_emb 			= dict()
-		# session_emb 		= dict()
 
 
 		for song in vocab:
@@ -108,8 +94,8 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 		for pl in u_playlists:
 			print('[{}/{}] [USER] Playlist'.format(k4, nou_playlists), flush=False, end='\r')
 			k4+=1
-			ixes 		= range(0, len(pl))
-			s_windows 	= [(pl[ix], get_window(pl, ix, W_SIZE)) for ix in ixes]
+			ixes 			= range(0, len(pl))
+			s_windows = [(pl[ix], get_window(pl, ix, W_SIZE)) for ix in ixes]
 			for song, window in s_windows:
 				user_windows[song].append(window)
 		print()
@@ -117,16 +103,14 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 		for pl in s_playlists:
 			print('[{}/{}] [SESSION] Playlist'.format(k4, nos_playlists), flush=False, end='\r')
 			k4+=1
-			ixes 		= range(0, len(pl))
-			s_windows 	= [(pl[ix], get_window(pl, ix, W_SIZE)) for ix in ixes]
+			ixes 			= range(0, len(pl))
+			s_windows = [(pl[ix], get_window(pl, ix, W_SIZE)) for ix in ixes]
 			for song, window in s_windows:
 				session_windows[song].append(window)
 		print()
 
 		f = open(pwd + 'song_context_{}.txt'.format(W_SIZE), 'w')
 		for song in vocab:
-		# 	print('[{}/{}] Predicting the embeddings of song {}.'.format(k4, vocab_size, ("%.100s" % song)), flush=False, end='\r')
-		# 	k4+=1
 			u_occurrences = user_windows[song2ix[song]]
 			s_occurrences = session_windows[song2ix[song]]
 			for u_o, s_o in zip(u_occurrences, s_occurrences):
@@ -157,27 +141,31 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 
 	train, test = data[int(len(data) *.20):], data[:int(len(data) *.20)]
 
-	input_session 		= Input(batch_shape=(None, WINDOW))
-	embedding_session = Embedding(input_dim=vocab_size, output_dim=EMBEDDING_DIM, name='Session_Embeddings', mask_zero=True)(input_session)
+	input_session 			= Input(batch_shape=(None, WINDOW))
+	embedding_session 		= Embedding(input_dim=vocab_size, output_dim=EMBEDDING_DIM, name='Session_Embeddings', mask_zero=True)(input_session)
 	drop_session 			= Dropout(0.2)(embedding_session)
 	rec_session 			= LSTM(NUM_UNITS, name='Session_LSTM')(drop_session)
 	drop_session 			= Dropout(0.2)(rec_session)
 
-
 	input_user 				= Input(batch_shape=(None, WINDOW))
-	embedding_user 		= Embedding(input_dim=vocab_size, output_dim=EMBEDDING_DIM, name='User_Embeddings', mask_zero=True)(input_user)
-	drop_user					= Dropout(0.2)(embedding_user)
-	rec_user					= LSTM(NUM_UNITS, name='User_LSTM')(drop_user)
-	drop_user					= Dropout(0.2)(rec_user)
+	embedding_user 			= Embedding(input_dim=vocab_size, output_dim=EMBEDDING_DIM, name='User_Embeddings', mask_zero=True)(input_user)
+	drop_user				= Dropout(0.2)(embedding_user)
+	rec_user				= LSTM(NUM_UNITS, name='User_LSTM')(drop_user)
+	drop_user				= Dropout(0.2)(rec_user)
 	combination 			= Concatenate()([drop_session, drop_user])
 	dense       			= Dense(vocab_size, activation='softmax', name='Densa')(combination)
 	model       			= Model(inputs=[input_session, input_user], outputs=dense)
 	checkpoint 				= ModelCheckpoint('{}_model_checkpoint.h5'.format(DS), monitor='loss', verbose=0, save_best_only=False, period=1)
 	es          			= EarlyStopping(monitor='val_acc', mode='max', verbose=1, patience=5)
 
+	# model 					= multi_gpu_model(model, 2)
+
 	model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 	model.summary()
-
+	
+	plot_model(model, to_file='model.png')
+	
+	
 	if exists('{}_model_checkpoint.h5'.format(DS)):
 		model = load_model('{}_model_checkpoint.h5'.format(DS))
 
@@ -185,7 +173,7 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 						validation_data=batch(test, BATCH_SIZE), validation_steps=len(test) // BATCH_SIZE,  callbacks=[es, checkpoint])
 
 	session_embeddings 		= model.get_layer('Session_Embeddings').get_weights()[0]
-	user_embeddings 			= model.get_layer('User_Embeddings').get_weights()[0]
+	user_embeddings 		= model.get_layer('User_Embeddings').get_weights()[0]
 
 	u_emb = {}
 	s_emb = {}
@@ -194,8 +182,6 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 		u_emb[song] = user_embeddings[song2ix[song]]
 		s_emb[song] = session_embeddings[song2ix[song]]
 
+	del model
+	gc.collect()
 	return u_emb, s_emb
-
-
-
-

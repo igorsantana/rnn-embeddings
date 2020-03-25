@@ -6,18 +6,19 @@ import warnings
 
 class Helper():
     def __init__(self, train, test, songs, ds):
-        self.ds              = ds
-        self.train           = train
-        self.test            = test
-        self.songs           = songs
-        self.m2v_songs       = self.songs.m2v.tolist() 
-        self.sm2v_songs      = self.songs.sm2v.tolist()
-        self.songs_ix        = { v:k for k,v in enumerate(songs.index, 0) }
-        self.ix_users        = { v:k for k,v in enumerate(np.concatenate([train.index.values, test.index.values]).tolist(), 0)   }
-        self.num_users       = len(self.ix_users)
-        self.num_songs       = len(songs.index)
-        self.ix_pref         = { v:self.u_pref(k) for (k,v) in self.ix_users.items() }
-        self.ix_u_songs      = { v:self.unique_songs(k) for (k,v) in self.ix_users.items() }
+    	self.ds              = ds
+    	self.train           = train
+    	self.test            = test
+    	self.songs           = songs
+    	self.m2v_songs       = self.songs.m2v.tolist() 
+    	self.sm2v_songs      = self.songs.sm2v.tolist()
+    	self.songs_ix        = { v:k for k,v in enumerate(songs.index, 0) }
+    	self.ix_songs        = { k:v for k,v in enumerate(songs.index, 0) }
+    	self.ix_users        = { v:k for k,v in enumerate(np.concatenate([train.index.values, test.index.values]).tolist(), 0)   }
+    	self.num_users       = len(self.ix_users)
+    	self.num_songs       = len(songs.index)
+    	self.ix_pref         = { v:self.u_pref(k) for (k,v) in self.ix_users.items() }
+    	self.ix_u_songs      = { v:self.unique_songs(k) for (k,v) in self.ix_users.items() }
 
     def user_sessions(self, user):
         history = self.test.loc[user, 'history']
@@ -30,24 +31,24 @@ class Helper():
         return self.ix_users[ix]
 
     def unique_songs(self, user):
-        if user in self.train.index.values:
+        if user in self.train.index:
             history = self.train[self.train.index == user]['history'].values[0]
-        if user in self.test.index.values:
+        if user in self.test.index:
             history = self.test[self.test.index == user]['history'].values[0]
         flat_history = [song for session in history for song in session]
         unique_songs = list(set(flat_history))
         return unique_songs
 
-    def u_pref(self,user):
-        if user in self.train.index.values:
-            history = self.train[self.train.index == user]['history'].values[0]
-        if user in self.test.index.values:
-            history = self.test[self.test.index == user]['history'].values[0]
-            history = [s[:len(s)//2] for s in history]
-        flat_history = [song for session in history for song in session]
-        flat_history = [self.songs.loc[song, 'm2v'] for song in flat_history]
-        mean         = np.mean(flat_history, axis=0)
-        return mean
+    def u_pref(self, user):
+    	if user in self.train.index:
+      		history = self.train[self.train.index == user]['history'].values[0]
+    	if user in self.test.index:
+      		history = self.test[self.test.index == user]['history'].values[0]
+      		history = [s[:len(s)//2] for s in history]
+    	flat_history = [song for session in history for song in session]
+    	flat_history = [self.songs.loc[song, 'm2v'] for song in flat_history]
+    	mean         = np.mean(flat_history, axis=0)
+    	return mean
 
     def c_pref(self, songs):
         flat_vecs       = self.songs.loc[songs, 'sm2v'].tolist()
@@ -88,3 +89,4 @@ class Helper():
             matrix_u_songs[u] = y_array
         np.save('tmp/{}/matrix_user_songs'.format(self.ds), matrix_u_songs)
         return matrix_u_songs
+

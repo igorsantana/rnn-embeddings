@@ -14,8 +14,6 @@ from project.recsys.algorithms        	import execute_algo
 from project.evaluation.ResultReport	import Results
 from keras.models                   	import model_from_yaml
 
-
-
 def get_rnn():
     model = model_from_yaml(open('training_model.yaml','r'))
     model.load_weights('training_weights.h5')
@@ -40,8 +38,6 @@ def cross_validation(df, conf, setups):
 	results 		= Results(setups, k)
 	exec_path		= r_paths['full']
 	pwd_rec 		= 'tmp/{}/rec/'.format(dataset)
-	# rnn 			= get_rnn()
-	# song2ix 		= pickle.load(open('song2ix.pickle', 'rb'))
 
 	if not exists(pwd_rec):
 		os.mkdir(pwd_rec)
@@ -67,8 +63,6 @@ def cross_validation(df, conf, setups):
 			time = datetime.now().strftime('%d/%m/%Y %H:%M')
 			print('%s | fold-%d | Running recsys w/ k-fold with the following params: %s' % (time, fold, params))
 			helper 	= Helper(train, test, songs, dataset)
-			# m2vTN, sm2vTN, csm2vTN, csm2vUK, rnnTN = execute_algo(train.index, test.index, songs, topN, k, helper, pwd_rec + params, rnn, song2ix)
-			# res = results.fold_results(params, m2vTN, sm2vTN, csm2vTN, csm2vUK, rnnTN, fold)
 			m2vTN, sm2vTN, csm2vTN, csm2vUK = execute_algo(train.index, test.index, songs, topN, k, helper, pwd_rec + params)
 			res 							= results.fold_results(params, m2vTN, sm2vTN, csm2vTN, csm2vUK, csm2vUK, fold)
 

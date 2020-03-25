@@ -1,10 +1,10 @@
 models:
   rnn:
-    embedding_dim: [256]
-    batch: 512
-    epochs: [100]
+    embedding_dim: [1024]
+    batch: 64
+    epochs: [50]
     model: ['LSTM']
-    window: [5]
+    window: [3]
     bi: [False]
     num_units: [512]
   music2vec:
@@ -27,7 +27,7 @@ models:
     epochs: [15]
     learning_rate: [0.025]
 session:
-  interval: 60
+  interval: 30
 evaluation:
   dataset: 'music2all'
   cross-validation: 5
@@ -35,13 +35,13 @@ evaluation:
   topN: 5
 results:
   summarized: 'outputs/results_summarized_music2all.csv'
-  full: 'outputs/results_full_music2all.csv'
+  full: 'outputs/music2all.csv'
 embeddings:
   music2vec: 
-    usage: False
+    usage: True
   doc2vec: 
     usage: False
   glove: 
     usage: False
   rnn: 
-    usage: True
+    usage: False

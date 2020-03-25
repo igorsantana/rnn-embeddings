@@ -89,6 +89,6 @@ def execute_algo(train, test, songs, topN, k_sim, data, pwd):
 
     m_m2vTN     = np.mean(m2vTN, axis=0).tolist()
     m_sm2vTN    = np.mean(sm2vTN, axis=0).tolist()
-    m_csm2vTN   = np.mean(m2vTN, axis=0).tolist()
-    m_csm2vUK   = np.mean(sm2vTN, axis=0).tolist()
+    m_csm2vTN   = np.mean(csm2vTN, axis=0).tolist()
+    m_csm2vUK   = np.mean(csm2vUK, axis=0).tolist()
     return (m_m2vTN, m_sm2vTN, m_csm2vTN, m_csm2vUK)

@@ -13,14 +13,14 @@ def _rnn_load(path, songs):
     data = pickle.load(open(path, 'rb'))
     emb_dict = {}
     for song in songs:
-        emb_dict[song] = data[song]
+      emb_dict[song] = data[song]
     return emb_dict
 
 def __w2v_load(path, songs):
     wv = Word2Vec.load(path).wv
     emb_dict = {}
     for song in songs:
-        emb_dict[song] = wv[song]
+      emb_dict[song] = wv[song]
     return emb_dict
 
 def __g_load(path, songs):
