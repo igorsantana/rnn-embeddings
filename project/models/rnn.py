@@ -4,8 +4,6 @@ from keras.models                   import Model
 from keras.layers                   import Embedding, LSTM, Dense, CuDNNGRU, LSTM, Input, Bidirectional, Dropout, Concatenate, Bidirectional
 from keras.models                   import Sequential, load_model
 from keras.callbacks                import EarlyStopping, ModelCheckpoint
-from keras.utils 					import plot_model
-from keras.utils 					import multi_gpu_model
 from keras.preprocessing.sequence   import TimeseriesGenerator
 import concurrent.futures as fut
 import os
@@ -158,13 +156,8 @@ def rnn(df, DS, MODEL, W_SIZE, EPOCHS, BATCH_SIZE, EMBEDDING_DIM, NUM_UNITS, BID
 	checkpoint 				= ModelCheckpoint('{}_model_checkpoint.h5'.format(DS), monitor='loss', verbose=0, save_best_only=False, period=1)
 	es          			= EarlyStopping(monitor='val_acc', mode='max', verbose=1, patience=5)
 
-	# model 					= multi_gpu_model(model, 2)
-
 	model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 	model.summary()
-	
-	plot_model(model, to_file='model.png')
-	
 	
 	if exists('{}_model_checkpoint.h5'.format(DS)):
 		model = load_model('{}_model_checkpoint.h5'.format(DS))

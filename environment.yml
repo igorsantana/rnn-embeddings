@@ -1,4 +1,4 @@
-name: env-masters-test
+name: rnn-embeddings
 channels:
   - anaconda
   - defaults

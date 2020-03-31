@@ -58,13 +58,13 @@ i=0
 for ax in axes.flatten():
 	ax.get_legend().remove()
 	ax.set(yticks=np.arange(0, 0.21, 0.025))
-	ax.set(xlabel='Métrica Utilizada', ylabel='Valor')
+	ax.set(xlabel='Metrics Used', ylabel='Valor')
 	ax.set(title=titles[i])
 	i+=1
 	
 
 plt.subplots_adjust(hspace=0.4)
-fig.suptitle('SPLIT 30; SESSIONS >= {}; 100% Dataset (n=full)'.format(10), fontsize=18, y=.98)
+fig.suptitle('Metrics', fontsize=18, y=.98)
 plt.show()
 
 
