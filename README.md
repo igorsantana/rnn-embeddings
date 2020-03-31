@@ -65,13 +65,13 @@ The `model` and `bi` parameters in the `models/rnn` configuration object are not
 
 To better understand the project, I highly recommend you to go check the work that I used as a baseline for my model:
 
-- [[link]((link)[https://doi.org/10.1007/s10791-017-9317-7] )] Wang, D., Deng, S. & Xu, G. Sequence-based context-aware music recommendation. Information Retrieval Journal (2018)
+- [link](https://doi.org/10.1007/s10791-017-9317-7) -  Wang, D., Deng, S. & Xu, G. Sequence-based context-aware music recommendation. Information Retrieval Journal (2018)
 
 Their work, *music2vec*, is one of the baselines for my RNN model. The following embeddings are implemented in this project:
 
 - music2vec
-- doc2vec [[link]((link)[https://cs.stanford.edu/~quocle/paragraph_vector.pdf] )]
-- GloVe [[link]((link)[https://nlp.stanford.edu/projects/glove/] )]
+- doc2vec - [link](https://cs.stanford.edu/~quocle/paragraph_vector.pdf)
+- GloVe - [link](https://nlp.stanford.edu/projects/glove/)
 
 To evaluate these embeddings models, the CARS that are implemented are the ones that were proposed by Wang et. al (M-TN, SM-TN, CSM-TN, CSM-UK). Besides the metrics that were used in the paper, I have included MAP, NDCG@5 and Precision@5 as well. The cutoff of these metrics is not configurable, sorry.
 
