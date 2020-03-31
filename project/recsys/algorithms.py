@@ -80,10 +80,8 @@ def execute_algo(train, test, songs, topN, k_sim, data, pwd):
                 UK_cos  = np.sum([song_sim, con_cos], axis=0)
                 uk_tn   = data.get_n_largest(UK_cos, topN)
                 csm2vUK.append(get_metrics(uk_tn, test_songs))
-                
                 to_write.append(recs(s, test_songs, user_tn, cos_tn, both_tn, uk_tn))
                 s+=1
-        
         write_rec(pwd + '/' + user.replace('/', '_'), to_write)
         u+=1
 

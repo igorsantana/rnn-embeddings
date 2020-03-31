@@ -1,29 +1,12 @@
-SPLIT DE SESSION: 30 MIN
-REMOVIDAS AS SESSÕES DE TAMANHO 04
-50% da base de dados
+# Masters Project
+
+## Jointly learning music embeddings with Recurrent Neural Networks
+
+This repository contains all the code that I did during my masters @ State University of Maringá. I do not intend to add new features to this project, as I will not continue this project in a PhD. To better understand what is the goal of this project, this quote is from my thesis and summarizes what I did: 
+
+> This work's goal is to use Recurrent Neural Networks to acquire contextual information for each song, given the sequence of songs that each user has listened to using embeddings. 
 
 
-MASTERS:
+If you have any doubts about the code, or want to use it in your project, let me know! I will be glad to help you in anything you need.
 
-[x] MUSIC2VEC
-[x] RNN 256/256     w:3
-[x] RNN 512/512     w:3 
-[x] RNN 512/1024    w:3 
-[x] RNN 512/512     w:3 BIDIRECTIONAL
-
-MASTERS-SEGUNDO:
-
-[x] RNN 512/512 w:3
-[x] music2vec           (REMOVIDAS AS SESSÕES DE TAMANHO < 10) (não pode ser comparada com os outros)
-[x] RNN 512/512 w:3     (REMOVIDAS AS SESSÕES DE TAMANHO < 10) (não pode ser comparada com os outros)
-[x] RNN 512/1024 w:3    (REMOVIDAS AS SESSÕES DE TAMANHO < 10) (não pode ser comparada com os outros)
-[x] RNN 512/512 w:10    (REMOVIDAS AS SESSÕES DE TAMANHO < 10) (não pode ser comparada com os outros)
-
-MASTERS-TERCEIRO:
-
-[x] RNN 512/512 w:5
-
-MASTERS-QUARTO:
-
-[x] RNN 512/512 w:10
-[x] RNN (2 camadas) 256/256 W:10 
+---
